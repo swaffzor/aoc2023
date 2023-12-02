@@ -52,7 +52,6 @@ export const part2 = (input: string) => {
     const first = getFirstDigit(line)
     const last = getLastDigit(line)
     const solution = Number(`${first}${last}`)
-    console.log('solution: ', solution)
     return solution
   })
   return idk.reduce((acc, curr) => acc + curr, 0)
@@ -101,7 +100,13 @@ export const getLastDigit = (line: string) => {
     nine: 9,
   }
   const digitKeys = Object.entries(digitMap)
-  const firstNumberIndex = line.split('').findIndex((char) => Number(char))
+  const firstNumberIndex =
+    line.length -
+    line
+      .split('')
+      .reverse()
+      .findIndex((char) => Number(char)) -
+    1
   const firstArray: Record<number, number>[] = []
   digitKeys.forEach((digit) => {
     const maths = line.indexOf(digit[0])
@@ -110,7 +115,7 @@ export const getLastDigit = (line: string) => {
     }
   })
   const firstIndex = firstArray.sort((a, b) => b[0] - a[0])[0]
-  const includesNumerals = firstNumberIndex >= 0
+  const includesNumerals = firstNumberIndex !== line.length
   const first =
     includesNumerals && firstNumberIndex > firstIndex[0]
       ? Number(line[firstNumberIndex])

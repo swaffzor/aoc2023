@@ -3,7 +3,7 @@ import { getFirstDigit, getLastDigit, part1, part2 } from './part1'
 import path from 'path'
 import { getPuzzleInput } from '../utils'
 
-describe.skip('getPuzzleInput', () => {
+describe('getPuzzleInput', () => {
   it('should return the puzzle input as a string if no iterator is passed', () => {
     const file = 'day1/sampleInput'
     const puzzleInput = getPuzzleInput(file)
