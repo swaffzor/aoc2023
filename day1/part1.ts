@@ -54,7 +54,8 @@ export const part2 = (input: string) => {
     const solution = Number(`${first}${last}`)
     return solution
   })
-  return idk.reduce((acc, curr) => acc + curr, 0)
+  const answer = idk.reduce((acc, curr) => acc + curr, 0)
+  return answer
 }
 
 export const getFirstDigit = (line: string) => {
@@ -79,11 +80,12 @@ export const getFirstDigit = (line: string) => {
     }
   })
   const firstIndex = firstArray.sort((a, b) => a[0] - b[0])[0]
+  const onlyNumerals = firstArray.length === 0
   const includesNumerals = firstNumberIndex >= 0
   const first =
-    includesNumerals && firstNumberIndex < firstIndex[0]
+    onlyNumerals || (includesNumerals && firstNumberIndex < firstIndex?.[0])
       ? Number(line[firstNumberIndex])
-      : firstIndex[1]
+      : firstIndex?.[1]
   return first
 }
 
@@ -109,49 +111,17 @@ export const getLastDigit = (line: string) => {
     1
   const firstArray: Record<number, number>[] = []
   digitKeys.forEach((digit) => {
-    const maths = line.indexOf(digit[0])
+    const maths = line.lastIndexOf(digit[0])
     if (maths >= 0) {
       firstArray.push([maths, digit[1]])
     }
   })
   const firstIndex = firstArray.sort((a, b) => b[0] - a[0])[0]
+  const onlyNumerals = firstArray.length === 0
   const includesNumerals = firstNumberIndex !== line.length
   const first =
-    includesNumerals && firstNumberIndex > firstIndex[0]
+    onlyNumerals || (includesNumerals && firstNumberIndex > firstIndex?.[0])
       ? Number(line[firstNumberIndex])
-      : firstIndex[1]
+      : firstIndex?.[1]
   return first
 }
-
-// export const part2Try1 = (input: string) => {
-//   const digitMap = [
-//     { word: 'one', value: 1 },
-//     { word: 'two', value: 2 },
-//     { word: 'three', value: 3 },
-//     { word: 'four', value: 4 },
-//     { word: 'five', value: 5 },
-//     { word: 'six', value: 6 },
-//     { word: 'seven', value: 7 },
-//     { word: 'eight', value: 8 },
-//     { word: 'nine', value: 9 },
-//   ]
-//   const inputLines = input.split('\n')
-//   const calibrationValues = inputLines.map((line) => {
-//     const wordMap = digitMap.map((digit) => digit.word)
-//     const firstNumberIndex = line.split('').findIndex((char) => Number(char))
-
-//     const firstWordValue = wordMap.findIndex((word) => line.includes(word)) + 1
-//     const firstWordIndex = line.indexOf(wordMap[firstWordValue - 1])
-//     const first =
-//       firstNumberIndex <= firstWordIndex
-//         ? line[firstNumberIndex]
-//         : firstWordValue
-//     //figure out the index the first number is at in the line
-
-//     const last = 0
-//     return Number(`${first}${last}`)
-//   })
-
-//   const total = calibrationValues.reduce((acc, curr) => acc + curr, 0)
-//   return total
-// }

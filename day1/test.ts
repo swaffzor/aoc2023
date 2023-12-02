@@ -67,6 +67,10 @@ describe('day1', () => {
         it('7pqrstsixteen', () => {
           expect(getFirstDigit('7pqrstsixteen')).toBe(7)
         })
+
+        it('kpmrk5flx', () => {
+          expect(getFirstDigit('kpmrk5flx')).toBe(5)
+        })
       })
 
       describe('getLastDigit', () => {
@@ -104,6 +108,10 @@ describe('day1', () => {
         it('7pqrstsixteen', () => {
           expect(getLastDigit('7pqrstsixteen')).toBe(6)
         })
+      })
+
+      it('kpmrk5flx', () => {
+        expect(getLastDigit('kpmrk5flx')).toBe(5)
       })
 
       it('sample input should work', () => {
