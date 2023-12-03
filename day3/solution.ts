@@ -20,8 +20,10 @@ In this schematic, two numbers are not part numbers because they are not adjacen
 Of course, the actual engine schematic is much larger. What is the sum of all of the part numbers in the engine schematic?
 */
 
-import { Grid } from '../types'
+import { Grid, Point } from '../types'
 import { getPointNeighbors } from '../utils'
+
+const grid: Grid<string> = []
 
 export const extractDataToPointGrid = (input: string) => {
   const rawGrid = input.split('\n').map((line) => line.split(''))
@@ -30,21 +32,90 @@ export const extractDataToPointGrid = (input: string) => {
       return {
         x,
         y,
+        z: 0,
         value,
       }
     })
   })
-  return pointGrid
+  grid.push(...pointGrid)
 }
 
+const isNumber = (point: Point<string>) =>
+  point?.value && parseInt(point?.value) >= 0
+
 export const part1 = (input: string) => {
-  const pointGrid = extractDataToPointGrid(input)
-  const neighborGrid = pointGrid.map((row, y, self) => {
-    const neighborRows = row.map((point, x) => {
-      const neighbors = getPointNeighbors(point, pointGrid)
-      return neighbors
-    })
-    return neighborRows
+  extractDataToPointGrid(input)
+  const partNumbersSum = grid.map((row, y) => {
+    const partNumbers = row
+      .map((point, x) => {
+        if (point.value !== '.') {
+          if (isNumber(point)) {
+            const neighbors = getPointNeighbors(point, grid)
+            const touchesSymbol = neighbors.some(
+              (neighbor) => neighbor.value !== '.' && !isNumber(neighbor)
+            )
+            if (touchesSymbol) {
+              // figure out the number the symbol is touching
+              return Number(getFullNumber(point, neighbors))
+              // need to remove the duplicates
+            }
+          }
+        }
+      })
+      .filter(Boolean)
+    return partNumbers
+  }, 0)
+  return partNumbersSum.flat().reduce((acc, partNumbers) => {
+    return (acc || 0) + (partNumbers || 0)
+  }, 0)
+}
+
+export const getFullNumber = (
+  point: Point<string>, // todo: remove this point, and pass in the x,y instead
+  neighbors: Point<string>[],
+  direction?: 'left' | 'right'
+) => {
+  let thePoint = grid[point.y][point.x]
+  if (thePoint === undefined) {
+    console.log('point: ', point)
+  }
+  const builtNumber: string[] = []
+  thePoint?.z === 0 && builtNumber.push(thePoint.value || '')
+  thePoint.z = 1
+  // filter out neighbors that are not on the same row
+  const rowNeighbors = neighbors.filter(
+    (neighbor) =>
+      isNumber(neighbor) && neighbor.y === thePoint.y && neighbor.z === 0
+  )
+  rowNeighbors.forEach((neighbor) => {
+    if (
+      direction !== 'left' &&
+      neighbor.x === thePoint.x + 1 &&
+      neighbor.z === 0
+    ) {
+      const idk = getFullNumber(
+        neighbor,
+        getPointNeighbors(neighbor, grid),
+        // grid,
+        'right'
+      )
+      neighbor.z = 1
+      builtNumber.push(idk)
+    } else if (
+      direction !== 'right' &&
+      neighbor.x === thePoint.x - 1 &&
+      neighbor.z === 0
+    ) {
+      const idk = getFullNumber(
+        neighbor,
+        getPointNeighbors(neighbor, grid),
+        // grid,
+        'left'
+      )
+      neighbor.z = 1
+      builtNumber.unshift(idk)
+    }
   })
-  return 0
+
+  return builtNumber.join('')
 }

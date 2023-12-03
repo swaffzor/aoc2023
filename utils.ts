@@ -43,64 +43,64 @@ export const getPointNeighbors = <T>(
     neighbors.push({
       x: point.x - 1,
       y: point.y,
-      z: left.z || -1,
-      value: grid[point.y][point.x - 1].value,
+      z: left?.z || 0,
+      value: grid[point.y][point.x - 1]?.value,
     })
   }
   if (right !== false) {
     neighbors.push({
       x: point.x + 1,
       y: point.y,
-      z: right.z || -1,
-      value: grid[point.y][point.x + 1].value,
+      z: right?.z || 0,
+      value: grid[point.y][point.x + 1]?.value,
     })
   }
   if (above !== false) {
     neighbors.push({
       x: point.x,
       y: point.y - 1,
-      z: above.z || -1,
-      value: grid[point.y - 1][point.x].value,
+      z: above?.z || 0,
+      value: grid[point.y - 1][point.x]?.value,
     })
   }
   if (below !== false) {
     neighbors.push({
       x: point.x,
       y: point.y + 1,
-      z: below.z || -1,
-      value: grid[point.y + 1][point.x].value,
+      z: below?.z || 0,
+      value: grid[point.y + 1][point.x]?.value,
     })
   }
   if (includeDiagonals && leftAbove !== false) {
     neighbors.push({
       x: point.x - 1,
       y: point.y - 1,
-      z: leftAbove.z || -1,
-      value: grid[point.y - 1][point.x - 1].value,
+      z: leftAbove?.z || 0,
+      value: grid[point.y - 1][point.x - 1]?.value,
     })
   }
   if (includeDiagonals && rightAbove !== false) {
     neighbors.push({
       x: point.x + 1,
       y: point.y - 1,
-      z: rightAbove.z || -1,
-      value: grid[point.y - 1][point.x + 1].value,
+      z: rightAbove?.z || 0,
+      value: grid[point.y - 1][point.x + 1]?.value,
     })
   }
   if (includeDiagonals && leftBelow !== false) {
     neighbors.push({
       x: point.x - 1,
       y: point.y + 1,
-      z: leftBelow.z || -1,
-      value: grid[point.y + 1][point.x - 1].value,
+      z: leftBelow?.z || 0,
+      value: grid[point.y + 1][point.x - 1]?.value,
     })
   }
   if (includeDiagonals && rightBelow !== false) {
     neighbors.push({
       x: point.x + 1,
       y: point.y + 1,
-      z: rightBelow.z || -1,
-      value: grid[point.y + 1][point.x + 1].value,
+      z: rightBelow?.z || 0,
+      value: grid[point.y + 1][point.x + 1]?.value,
     })
   }
 
