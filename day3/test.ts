@@ -3,6 +3,7 @@ import {
   extractDataToPointGrid,
   getFullNumber,
   part1,
+  part2,
   // part2,
 } from './solution'
 
@@ -631,7 +632,7 @@ const grid = [
 
 describe('day 3', () => {
   describe('part1', () => {
-    it('getFullNumber sample input line 1', () => {
+    it.skip('getFullNumber sample input line 1', () => {
       const point = {
         x: 2,
         y: 0,
@@ -673,7 +674,7 @@ describe('day 3', () => {
       expect(getFullNumber(point, neighbors)).toBe('467')
     })
 
-    it('getFullNumber sample input line 3', () => {
+    it.skip('getFullNumber sample input line 3', () => {
       const point = {
         x: 2,
         y: 2,
@@ -733,7 +734,7 @@ describe('day 3', () => {
       expect(getFullNumber(point, neighbors)).toBe('35')
     })
 
-    it('getFullNumber sample input line 3 is 35', () => {
+    it.skip('getFullNumber sample input line 3 is 35', () => {
       const point = {
         x: 3,
         y: 2,
@@ -793,9 +794,16 @@ describe('day 3', () => {
       expect(getFullNumber(point, neighbors)).toBe('35')
     })
 
-    it.only('solution', () => {
+    it('solution', () => {
       // expect(part1(getPuzzleInput('day3/sampleInput'))).toBe(4361)
       console.log('part1', part1(getPuzzleInput('day3/input')))
+    })
+  })
+
+  describe('part2', () => {
+    it.only('solution', () => {
+      // expect(part2(getPuzzleInput('day3/sampleInput'))).toBe(467835)
+      console.log('part2', part2(getPuzzleInput('day3/input')))
     })
   })
 })
