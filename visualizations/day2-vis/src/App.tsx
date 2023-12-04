@@ -29,7 +29,7 @@ function App() {
     'puzzle'
   )
   const [renderMode, setRenderMode] = React.useState<'static' | 'animate'>(
-    'animate'
+    'static'
   )
   const [justifyMode, setJustifyMode] = React.useState<
     'start' | 'end' | 'evenly' | 'between'
@@ -149,52 +149,54 @@ function App() {
         setGridCols,
       }}
     >
-      <h1 className="text-3xl">AoC 2023 day 2 part 2</h1>
+      <div className="flex flex-col items-center">
+        <h1 className="text-3xl">AoC 2023 day 2 part 2</h1>
 
-      <div className="sticky top-0 flex flex-wrap justify-center">
-        {buttons.map((button, index) => {
-          return (
-            <button
-              key={`button-${index}`}
-              className={buttonStyles}
-              onClick={button.action}
-            >
-              {button.label}
-            </button>
-          )
-        })}
-        <input
-          type="text"
-          className={`w-4 h-8 border-2 border-gray-400 rounded-md`}
-          value={gridCols}
-          onChange={(e) => setGridCols(Number(e.target.value))}
-        />
-      </div>
+        <div className="sticky top-0 flex flex-wrap justify-center">
+          {buttons.map((button, index) => {
+            return (
+              <button
+                key={`button-${index}`}
+                className={buttonStyles}
+                onClick={button.action}
+              >
+                {button.label}
+              </button>
+            )
+          })}
+          <input
+            type="text"
+            className={`w-4 h-8 border-2 border-gray-400 rounded-md`}
+            value={gridCols}
+            onChange={(e) => setGridCols(Number(e.target.value))}
+          />
+        </div>
 
-      <div
-        className={`grid grid-cols-${gridCols} grid-flow-dense auto-cols-max gap-0`}
-      >
-        {/* <div className={`grid grid-cols-${GRID_SIZE} gap-0`}> */}
-        {dataSource.map((game, index) => {
-          return (
-            <div
-              key={`game-row-${index}`}
-              className={`grid m-0 w-auto ${
-                useBorder ? 'border border-gray-400' : ''
-              }}`}
-            >
-              {/* Game {index + 1} {JSON.stringify(game)} */}
-              {game.map((rolls, index) => {
-                return (
-                  <PullRow
-                    key={`roll-${index}`}
-                    pulls={rolls}
-                  />
-                )
-              })}
-            </div>
-          )
-        })}
+        <div
+          className={`grid grid-cols-${gridCols} grid-flow-dense auto-cols-max gap-0`}
+        >
+          {/* <div className={`grid grid-cols-${GRID_SIZE} gap-0`}> */}
+          {dataSource.map((game, index) => {
+            return (
+              <div
+                key={`game-row-${index}`}
+                className={`grid m-0 w-auto ${
+                  useBorder ? 'border border-gray-400' : ''
+                }}`}
+              >
+                {/* Game {index + 1} {JSON.stringify(game)} */}
+                {game.map((rolls, index) => {
+                  return (
+                    <PullRow
+                      key={`roll-${index}`}
+                      pulls={rolls}
+                    />
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
       </div>
     </MyContext.Provider>
   )
