@@ -1,3 +1,5 @@
+import fs from 'fs'
+import { getPuzzleInput } from '../utils'
 /*
 --- Day 5: If You Give A Seed A Fertilizer ---
 
@@ -86,8 +88,9 @@ So, the lowest location number in this example is 35.
 What is the lowest location number that corresponds to any of the initial seed numbers?
 
 */
+type MapRanges = { dest: number; src: number; len: number }
 type Map = {
-  [key in Mapping]: { dest: number; src: number; len: number }[]
+  [key in Mapping]: MapRanges[]
 }
 type Mapping =
   | 'seed-to-soil'
@@ -98,7 +101,18 @@ type Mapping =
   | 'temperature-to-humidity'
   | 'humidity-to-location'
 
-export const extractData = (input: string) => {
+interface MapSet {
+  seeds: number[]
+  'seed-to-soil': MapRanges[]
+  'soil-to-fertilizer': MapRanges[]
+  'fertilizer-to-water': MapRanges[]
+  'water-to-light': MapRanges[]
+  'light-to-temperature': MapRanges[]
+  'temperature-to-humidity': MapRanges[]
+  'humidity-to-location': MapRanges[]
+}
+
+export const extractData = (input: string): MapSet => {
   const lines = input.split('\n')
   const seeds = lines[0].split(': ')[1].split(' ').map(Number)
   let mappings: Map = {
@@ -145,8 +159,10 @@ const convert = (
   return input
 }
 
-export const part1 = (input: string): number => {
-  const data = extractData(input)
+export const part1 = (input: string): number =>
+  seedToLocation(extractData(input))
+
+const seedToLocation = (data: MapSet): number => {
   const soil = data.seeds.map((seed) => convert(seed, data['seed-to-soil']))
   const fertilizer = soil.map((soil) =>
     convert(soil, data['soil-to-fertilizer'])
@@ -167,6 +183,79 @@ export const part1 = (input: string): number => {
   return Math.min(...location)
 }
 
+/*
+--- Part Two ---
+
+Everyone will starve if you only plant such a small number of seeds. Re-reading the almanac, it looks like the seeds: line actually describes ranges of seed numbers.
+
+The values on the initial seeds: line come in pairs. Within each pair, the first value is the start of the range and the second value is the length of the range. So, in the first line of the example above:
+
+seeds: 79 14 55 13
+This line describes two ranges of seed numbers to be planted in the garden. The first range starts with seed number 79 and contains 14 values: 79, 80, ..., 91, 92. The second range starts with seed number 55 and contains 13 values: 55, 56, ..., 66, 67.
+
+Now, rather than considering four seed numbers, you need to consider a total of 27 seed numbers.
+
+In the above example, the lowest location number can be obtained from seed number 82, which corresponds to soil 84, fertilizer 84, water 84, light 77, temperature 45, humidity 46, and location 46. So, the lowest location number is 46.
+
+Consider all of the initial seed numbers listed in the ranges on the first line of the almanac. What is the lowest location number that corresponds to any of the initial seed numbers?
+*/
+export const part2_2 = (input: string): number => {
+  const data = reverseMappingInData(extractData(input))
+  const possibleSeeds = data['humidity-to-location'].map((mapping) => {
+    const seed = locationToSeed(data, mapping.dest)
+    return seed
+  })
+
+  const min = Math.min(seedToLocation({ ...data, seeds: possibleSeeds }))
+  return min
+}
+
 export const part2 = (input: string): number => {
-  return 0
+  const data = extractData(input)
+  extractSeedsFromRanges(data.seeds)
+  const newData = getPuzzleInput('day5/seeds')
+    .split('\n')
+    .map((item) => parseInt(item))
+    .filter(Number)
+  const temp = seedToLocation({ ...data, seeds: newData })
+  return temp
+}
+
+const extractSeedsFromRanges = (input: number[]) => {
+  for (let i = 0; i < input.length; i += 2) {
+    for (let j = 0; j < input[i + 1]; j++) {
+      fs.appendFileSync('day5/seeds.txt', `${input[i] + j}\n`)
+    }
+  }
+}
+
+const swapDestAndSrc = (mapping: MapRanges[]): MapRanges[] => {
+  return mapping.map((m) => {
+    return { dest: m.src, src: m.dest, len: m.len }
+  })
+}
+
+const reverseMappingInData = (data: MapSet): MapSet => {
+  return {
+    ...data,
+    'seed-to-soil': swapDestAndSrc(data['seed-to-soil']),
+    'soil-to-fertilizer': swapDestAndSrc(data['soil-to-fertilizer']),
+    'fertilizer-to-water': swapDestAndSrc(data['fertilizer-to-water']),
+    'water-to-light': swapDestAndSrc(data['water-to-light']),
+    'light-to-temperature': swapDestAndSrc(data['light-to-temperature']),
+    'temperature-to-humidity': swapDestAndSrc(data['temperature-to-humidity']),
+    'humidity-to-location': swapDestAndSrc(data['humidity-to-location']),
+  }
+}
+
+// write a function called locationToSeed that takes a location and returns the seed that corresponds to it. the reverse of seedToLocation
+const locationToSeed = (data: MapSet, location: number): number => {
+  const humidity = convert(location, data['humidity-to-location'])
+  const temperature = convert(humidity, data['temperature-to-humidity'])
+  const light = convert(temperature, data['light-to-temperature'])
+  const water = convert(light, data['water-to-light'])
+  const fertilizer = convert(water, data['fertilizer-to-water'])
+  const soil = convert(fertilizer, data['soil-to-fertilizer'])
+  const seed = convert(soil, data['seed-to-soil'])
+  return seed
 }
