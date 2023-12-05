@@ -162,7 +162,7 @@ const convert = (
 export const part1 = (input: string): number =>
   seedToLocation(extractData(input))
 
-const seedToLocation = (data: MapSet): number => {
+export const seedToLocation = (data: MapSet): number => {
   const soil = data.seeds.map((seed) => convert(seed, data['seed-to-soil']))
   const fertilizer = soil.map((soil) =>
     convert(soil, data['soil-to-fertilizer'])
@@ -199,34 +199,40 @@ In the above example, the lowest location number can be obtained from seed numbe
 
 Consider all of the initial seed numbers listed in the ranges on the first line of the almanac. What is the lowest location number that corresponds to any of the initial seed numbers?
 */
-export const part2_2 = (input: string): number => {
-  const data = reverseMappingInData(extractData(input))
-  const possibleSeeds = data['humidity-to-location'].map((mapping) => {
-    const seed = locationToSeed(data, mapping.dest)
-    return seed
-  })
+// export const part2_2 = (input: string): number => {
+//   const data = extractData(input)
+//   // const data = reverseMappingInData(extractData(input))
+//   const possibleSeeds = data['humidity-to-location'].map((mapping) => {
+//     const seed = locationToSeed(data, mapping.dest)
+//     return seed
+//   })
+//   console.log('possibleSeeds', possibleSeeds)
 
-  const min = Math.min(seedToLocation({ ...data, seeds: possibleSeeds }))
-  return min
-}
+//   const min = Math.min(seedToLocation({ ...data, seeds: possibleSeeds }))
+//   return min
+// }
 
 export const part2 = (input: string): number => {
-  const data = extractData(input)
-  extractSeedsFromRanges(data.seeds)
-  const newData = getPuzzleInput('day5/seeds')
-    .split('\n')
-    .map((item) => parseInt(item))
-    .filter(Number)
-  const temp = seedToLocation({ ...data, seeds: newData })
-  return temp
+  // const data = extractData(input)
+  // extractSeedsFromRanges(data.seeds)
+  // const newData = getPuzzleInput('day5/seeds')
+  //   .split('\n')
+  //   .map((item) => parseInt(item))
+  //   .filter(Number)
+  // const temp = seedToLocation({ ...data, seeds: newData })
+  // return temp
+  return -1
 }
 
-const extractSeedsFromRanges = (input: number[]) => {
+export const extractSeedsFromRanges = (input: number[]) => {
+  const seeds = [] as number[]
   for (let i = 0; i < input.length; i += 2) {
     for (let j = 0; j < input[i + 1]; j++) {
-      fs.appendFileSync('day5/seeds.txt', `${input[i] + j}\n`)
+      // fs.appendFileSync('day5/seeds.txt', `${input[i] + j}\n`)
+      seeds.push(input[i] + j)
     }
   }
+  return seeds
 }
 
 const swapDestAndSrc = (mapping: MapRanges[]): MapRanges[] => {
@@ -235,7 +241,7 @@ const swapDestAndSrc = (mapping: MapRanges[]): MapRanges[] => {
   })
 }
 
-const reverseMappingInData = (data: MapSet): MapSet => {
+export const reverseMappingInData = (data: MapSet): MapSet => {
   return {
     ...data,
     'seed-to-soil': swapDestAndSrc(data['seed-to-soil']),
@@ -249,13 +255,52 @@ const reverseMappingInData = (data: MapSet): MapSet => {
 }
 
 // write a function called locationToSeed that takes a location and returns the seed that corresponds to it. the reverse of seedToLocation
-const locationToSeed = (data: MapSet, location: number): number => {
-  const humidity = convert(location, data['humidity-to-location'])
-  const temperature = convert(humidity, data['temperature-to-humidity'])
-  const light = convert(temperature, data['light-to-temperature'])
-  const water = convert(light, data['water-to-light'])
-  const fertilizer = convert(water, data['fertilizer-to-water'])
-  const soil = convert(fertilizer, data['soil-to-fertilizer'])
-  const seed = convert(soil, data['seed-to-soil'])
-  return seed
+// export const locationToSeed = (data: MapSet, location: number): number => {
+//   const humidity = convert(location, data['humidity-to-location'])
+//   const temperature = convert(humidity, data['temperature-to-humidity'])
+//   const light = convert(temperature, data['light-to-temperature'])
+//   const water = convert(light, data['water-to-light'])
+//   const fertilizer = convert(water, data['fertilizer-to-water'])
+//   const soil = convert(fertilizer, data['soil-to-fertilizer'])
+//   const seed = convert(soil, data['seed-to-soil'])
+//   return seed
+// }
+
+export const location2Seeds = (locations: number[], data: MapSet): number[] => {
+  // the lowest location number can be obtained from seed number 82
+  // location 46
+
+  // humidity 46,
+  const humidity = locations.map((location) => {
+    return convert(location, data['humidity-to-location'])
+  })
+  // temperature 45,
+  const temperature = humidity.map((mapping) =>
+    convert(mapping, data['temperature-to-humidity'])
+  )
+  // light 77,
+  const light = temperature.map((mapping) =>
+    convert(mapping, data['light-to-temperature'])
+  )
+  // water 84,
+  const water = light.map((mapping) => convert(mapping, data['water-to-light']))
+  // fertilizer 84,
+  const fertilizer = water.map((mapping) =>
+    convert(mapping, data['fertilizer-to-water'])
+  )
+  // soil 84,
+  const soil = fertilizer.map((mapping) =>
+    convert(mapping, data['soil-to-fertilizer'])
+  )
+  // seed 82,
+  const seeds = soil.map((mapping) => convert(mapping, data['seed-to-soil']))
+  return seeds
+}
+
+export const extractLocations = (locations: MapRanges[]): number[] => {
+  const temp = locations.flatMap((mapping) => {
+    const { dest, src, len } = mapping
+    return [...Array(len).keys()].map((i) => dest + i)
+  })
+  return temp
 }
