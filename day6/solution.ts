@@ -54,12 +54,16 @@ export const sampleInput: Race[] = [
   { time: 30, distance: 200 },
 ]
 
+const sampleInput2 = { time: 71530, distance: 940200 }
+
 export const puzzleInput: Race[] = [
   { time: 35, distance: 213 },
   { time: 69, distance: 1168 },
   { time: 68, distance: 1086 },
   { time: 87, distance: 1248 },
 ]
+
+const puzzleInput2 = { time: 35696887, distance: 213116810861248 }
 
 export const part1 = (input: string): number => {
   const data = input === 'sample' ? sampleInput : puzzleInput
@@ -87,4 +91,32 @@ export const calculateNumberOfWaysToWin = (
   return races.reduce((acc, race) => {
     return acc * distance <= race.distance ? race.distance : 1
   }, 0)
+}
+
+/*
+--- Part Two ---
+
+As the race is about to start, you realize the piece of paper with race times and record distances you got earlier actually just has very bad kerning. There's really only one race - ignore the spaces between the numbers on each line.
+
+So, the example from before:
+
+Time:      7  15   30
+Distance:  9  40  200
+...now instead means this:
+
+Time:      71530
+Distance:  940200
+Now, you have to figure out how many ways there are to win this single race. In this example, the race lasts for 71530 milliseconds and the record distance you need to beat is 940200 millimeters. You could hold the button anywhere from 14 to 71516 milliseconds and beat the record, a total of 71503 ways!
+
+How many ways can you beat the record in this one much longer race?
+*/
+
+export const part2 = (input: string): number => {
+  const data = input === 'sample' ? sampleInput2 : puzzleInput2
+  let waysToWin = 0
+  for (let i = 0; i < data.time; i++) {
+    const distance = (data.time - i) * i
+    if (distance > data.distance) waysToWin += 1
+  }
+  return waysToWin
 }
