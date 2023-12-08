@@ -101,38 +101,32 @@ export const evaluateHand = (cards: CardsAndCount, puzzlePart = 1) => {
     // todo: handle full house case
     switch (cards.length) {
       case 1:
-        return HandType.FiveOfAKind
       case 2:
-        if (cards.some(([_, count]) => count === 4)) {
-          return HandType.FiveOfAKind
-        } else {
-          return HandType.FourOfAKind
-        }
+        // J: 1 2 3 4
+        // A: 4 3 2 1
+        return HandType.FiveOfAKind
       case 3:
-        // check if count is more than 1 for anything other than J
-        // if so, add the quantity of J's to that count
-        const nonJ = cards.filter(([card, count]) => card !== 'J')
-        const nonJMultiple = nonJ.filter(([card, count]) => count > 1)
-        const jCount = cards.find(([card, _]) => card === 'J')![1]
-        if (nonJMultiple.length === 1) {
-          const newHand: CardsAndCount = cards
-            .filter(([card, _]) => card !== 'J')
-            .map(([card, count]) => {
-              if (card === nonJMultiple[0][0]) {
-                return [card, count + jCount]
-              }
-              return [card, count]
-            })
-          return newHand.some(([_, count]) => count === 4)
-            ? HandType.FourOfAKind
-            : HandType.ThreeOfAKind
-        }
-        return HandType.FullHouse
+        // J: 1 1 2 3
+        // A: 1 2 2 1
+        // B: 3 2 1 1
+        return cards.filter((c) => c[0] !== 'J').every((c) => c[1] === 2)
+          ? HandType.FullHouse
+          : HandType.FourOfAKind
       case 4:
-        return HandType.OnePair
+        //
+        // J: 1 2
+        // A: 1 1
+        // B: 1 1
+        // C: 2 1
+        return HandType.ThreeOfAKind
       case 5:
+      // J: 1
+      // A: 1
+      // B: 1
+      // C: 1
+      // D: 1
       default:
-        return HandType.HighCard
+        return HandType.OnePair
     }
   } else {
     switch (cards.length) {
@@ -200,6 +194,7 @@ export const calculateCardRank = (
       'K',
       'A',
     ]
+    // consider that QKA are the same value?
     const cardValues2 = [
       'J',
       '2',
@@ -242,6 +237,7 @@ export const part2 = (input: string) => {
   const totalWinnings = calculateHandRank(handData, 2)
   return totalWinnings
 }
+// 253630098 is correct
 // 253222706 is too low
 // 252956268 is too low
 // 252618978 is too low
