@@ -6,7 +6,9 @@ import {
   calculateHandRank,
   evaluateHand,
   getCardValue,
+  getSomeRank,
   part1,
+  part2,
 } from './solution'
 
 describe('day 7', () => {
@@ -158,6 +160,234 @@ describe('day 7', () => {
         },
       ]
       expect(calculateHandRank(input)).toEqual(6440)
+    })
+  })
+
+  describe('part 2', () => {
+    it('solution', () => {
+      expect(part2(getPuzzleInput('day7/sampleInput'))).toEqual(5905)
+      console.log('part2', part2(getPuzzleInput('day7/input')))
+    })
+
+    describe('calculateHandRank', () => {
+      it('32T3K', () => {
+        const input = [
+          ['2', 1],
+          ['3', 2],
+          ['K', 1],
+          ['T', 1],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.OnePair)
+      })
+      it('T55J5', () => {
+        const input = [
+          ['5', 3],
+          ['J', 1],
+          ['T', 1],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.FourOfAKind)
+      })
+      it('KK677', () => {
+        const input = [
+          ['6', 1],
+          ['7', 2],
+          ['K', 2],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.TwoPair)
+      })
+      it('KTJJT', () => {
+        const input = [
+          ['J', 2],
+          ['K', 1],
+          ['T', 2],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.FourOfAKind)
+      })
+      it('QQQJA', () => {
+        const input = [
+          ['A', 1],
+          ['J', 1],
+          ['Q', 3],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.FourOfAKind)
+      })
+      it('QAQJA', () => {
+        const input = [
+          ['A', 2],
+          ['J', 1],
+          ['Q', 2],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.FullHouse)
+      })
+      it('JJJJJ', () => {
+        const input = [['J', 5]] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.FiveOfAKind)
+      })
+      it('3322J', () => {
+        const input = [
+          ['3', 2],
+          ['2', 2],
+          ['J', 1],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.FullHouse)
+      })
+    })
+    describe('evaluateHand', () => {
+      it('32T3K', () => {
+        const input = [
+          ['2', 1],
+          ['3', 2],
+          ['K', 1],
+          ['T', 1],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.OnePair)
+      })
+      it('T55J5', () => {
+        const input = [
+          ['5', 3],
+          ['J', 1],
+          ['T', 1],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.FourOfAKind)
+      })
+      it('KK677', () => {
+        const input = [
+          ['6', 1],
+          ['7', 2],
+          ['K', 2],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.TwoPair)
+      })
+      it('KTJJT', () => {
+        const input = [
+          ['J', 2],
+          ['K', 1],
+          ['T', 2],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.FourOfAKind)
+      })
+      it('QQQJA', () => {
+        const input = [
+          ['A', 1],
+          ['J', 1],
+          ['Q', 3],
+        ] as CardsAndCount
+        expect(evaluateHand(input, 2)).toEqual(HandType.FourOfAKind)
+      })
+    })
+
+    it('calculateCardRank', () => {
+      const input = [
+        {
+          hand: '32T3K',
+          bid: 765,
+          handType: 1,
+          cards: [
+            ['2', 1],
+            ['3', 2],
+            ['K', 1],
+            ['T', 1],
+          ],
+        },
+        {
+          hand: 'KK677',
+          bid: 28,
+          handType: 2,
+          cards: [
+            ['6', 1],
+            ['7', 2],
+            ['K', 2],
+          ],
+        },
+        {
+          hand: 'KTJJT',
+          bid: 220,
+          handType: 2,
+          cards: [
+            ['J', 2],
+            ['K', 1],
+            ['T', 2],
+          ],
+        },
+        {
+          hand: 'T55J5',
+          bid: 684,
+          handType: 3,
+          cards: [
+            ['5', 3],
+            ['J', 1],
+            ['T', 1],
+          ],
+        },
+        {
+          hand: 'QQQJA',
+          bid: 483,
+          handType: 3,
+          cards: [
+            ['A', 1],
+            ['J', 1],
+            ['Q', 3],
+          ],
+        },
+      ] as any
+      expect(calculateHandRank(input, 2)).toEqual(5905)
+    })
+
+    it.only('getSomeRank', () => {
+      const input = [
+        {
+          hand: '32T3K',
+          bid: 765,
+          handType: 1,
+          cards: [
+            ['2', 1],
+            ['3', 2],
+            ['K', 1],
+            ['T', 1],
+          ],
+        },
+        {
+          hand: 'KK677',
+          bid: 28,
+          handType: 2,
+          cards: [
+            ['6', 1],
+            ['7', 2],
+            ['K', 2],
+          ],
+        },
+        {
+          hand: 'KTJJT',
+          bid: 220,
+          handType: 2,
+          cards: [
+            ['J', 2],
+            ['K', 1],
+            ['T', 2],
+          ],
+        },
+        {
+          hand: 'T55J5',
+          bid: 684,
+          handType: 3,
+          cards: [
+            ['5', 3],
+            ['J', 1],
+            ['T', 1],
+          ],
+        },
+        {
+          hand: 'QQQJA',
+          bid: 483,
+          handType: 3,
+          cards: [
+            ['A', 1],
+            ['J', 1],
+            ['Q', 3],
+          ],
+        },
+      ] as any
+      expect(getSomeRank(input)).toEqual([1, 2, 3, 4, 5])
     })
   })
 })
