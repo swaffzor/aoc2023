@@ -70,7 +70,6 @@ const extractData = (input: string): HandAndBid[] =>
 
 export const part1 = (input: string) => {
   const data = extractData(input)
-
   const handData = data.map(({ hand, bid }) => {
     const cards = getCardValue(hand)
     const handType = evaluateHand(cards)
@@ -95,35 +94,65 @@ export const getCardValue = (hand: string): CardsAndCount => {
   return Object.entries(cardCounts)
 }
 
-export const evaluateHand = (cards: CardsAndCount) => {
-  switch (cards.length) {
-    case 1:
-      // Five of a kind
-      return HandType.FiveOfAKind
-    case 2:
-      // Four of a kind or Full house
-      return cards.some(([_, count]) => count === 4)
-        ? HandType.FourOfAKind
-        : HandType.FullHouse
-    case 3:
-      // Three of a kind or Two pair
-      return cards.some(([_, count]) => count === 3)
-        ? HandType.ThreeOfAKind
-        : HandType.TwoPair
-    case 4:
-      // One pair
-      return HandType.OnePair
-    case 5:
-    default:
-      // High card
-      return HandType.HighCard
+export const evaluateHand = (cards: CardsAndCount, puzzlePart = 1) => {
+  // 339 of the hands have a J(oker)
+  if (puzzlePart === 2 && cards.some((card) => card[0] === 'J')) {
+    // Joker is present
+    // todo: handle full house case
+    switch (cards.length) {
+      case 1:
+      case 2:
+        // J: 1 2 3 4
+        // A: 4 3 2 1
+        return HandType.FiveOfAKind
+      case 3:
+        // J: 1 1 2 3
+        // A: 1 2 2 1
+        // B: 3 2 1 1
+        return cards.filter((c) => c[0] !== 'J').every((c) => c[1] === 2)
+          ? HandType.FullHouse
+          : HandType.FourOfAKind
+      case 4:
+        //
+        // J: 1 2
+        // A: 1 1
+        // B: 1 1
+        // C: 2 1
+        return HandType.ThreeOfAKind
+      case 5:
+      // J: 1
+      // A: 1
+      // B: 1
+      // C: 1
+      // D: 1
+      default:
+        return HandType.OnePair
+    }
+  } else {
+    switch (cards.length) {
+      case 1:
+        return HandType.FiveOfAKind
+      case 2:
+        return cards.some(([_, count]) => count === 4)
+          ? HandType.FourOfAKind
+          : HandType.FullHouse
+      case 3:
+        return cards.some(([_, count]) => count === 3)
+          ? HandType.ThreeOfAKind
+          : HandType.TwoPair
+      case 4:
+        return HandType.OnePair
+      case 5:
+      default:
+        return HandType.HighCard
+    }
   }
 }
 
-export const calculateHandRank = (hands: RankData[]) => {
+export const calculateHandRank = (hands: RankData[], puzzlePart = 1) => {
   const sorted = hands.sort((a, b) => {
     return a.handType - b.handType === 0
-      ? calculateCardRank(a.hand, b.hand)
+      ? calculateCardRank(a.hand, b.hand, puzzlePart)
       : a.handType - b.handType
   })
   return sorted.reduce((acc, curr, index) => {
@@ -132,10 +161,25 @@ export const calculateHandRank = (hands: RankData[]) => {
   }, 0)
 }
 
-const calculateCardRank = (cardA: string, cardB: string) => {
+export const getSomeRank = (hands: RankData[]) => {
+  const sorted = hands.sort((a, b) => {
+    return a.handType - b.handType === 0
+      ? calculateCardRank(a.hand, b.hand)
+      : a.handType - b.handType
+  })
+  return sorted.map((_, index) => {
+    return index + 1
+  }, 0)
+}
+
+export const calculateCardRank = (
+  cardA: string,
+  cardB: string,
+  puzzlePart = 1
+) => {
   let i = 0
   while (i < cardA.length && i < cardB.length) {
-    const cardValues = [
+    const cardValues1 = [
       '2',
       '3',
       '4',
@@ -150,6 +194,23 @@ const calculateCardRank = (cardA: string, cardB: string) => {
       'K',
       'A',
     ]
+    // consider that QKA are the same value?
+    const cardValues2 = [
+      'J',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      'T',
+      'Q',
+      'K',
+      'A',
+    ]
+    const cardValues = puzzlePart === 1 ? cardValues1 : cardValues2
     const temp = cardValues.indexOf(cardA[i]) - cardValues.indexOf(cardB[i])
     if (temp === 0) {
       i += 1
@@ -159,3 +220,47 @@ const calculateCardRank = (cardA: string, cardB: string) => {
   }
   return 0
 }
+
+export const part2 = (input: string) => {
+  const data = extractData(input)
+  const handData = data.map(({ hand, bid }) => {
+    const cards = getCardValue(hand)
+    const handType = evaluateHand(cards, 2)
+    return {
+      hand,
+      bid,
+      handType,
+      cards,
+    } as RankData
+  })
+  // sort by hand type and then by highest card value
+  const totalWinnings = calculateHandRank(handData, 2)
+  return totalWinnings
+}
+// 253630098 is correct
+// 253222706 is too low
+// 252956268 is too low
+// 252618978 is too low
+
+/*
+--- Part Two ---
+To make things a little more interesting, the Elf introduces one additional rule. Now, J cards are jokers - wildcards that can act like whatever card would make the hand the strongest type possible.
+
+To balance this, J cards are now the weakest individual cards, weaker even than 2. The other cards stay in the same order: A, K, Q, T, 9, 8, 7, 6, 5, 4, 3, 2, J.
+
+J cards can pretend to be whatever card is best for the purpose of determining hand type; for example, QJJQ2 is now considered four of a kind. However, for the purpose of breaking ties between two hands of the same type, J is always treated as J, not the card it's pretending to be: JKKK2 is weaker than QQQQ2 because J is weaker than Q.
+
+Now, the above example goes very differently:
+
+32T3K 765
+T55J5 684
+KK677 28
+KTJJT 220
+QQQJA 483
+32T3K is still the only one pair; it doesn't contain any jokers, so its strength doesn't increase.
+KK677 is now the only two pair, making it the second-weakest hand.
+T55J5, KTJJT, and QQQJA are now all four of a kind! T55J5 gets rank 3, QQQJA gets rank 4, and KTJJT gets rank 5.
+With the new joker rule, the total winnings in this example are 5905.
+
+Using the new joker rule, find the rank of every hand in your set. What are the new total winnings?
+*/
