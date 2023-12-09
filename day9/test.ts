@@ -1,5 +1,5 @@
 import { getPuzzleInput } from '../utils'
-import { calcNextValue, part1 } from './solution'
+import { calcNextValue, part1, part2 } from './solution'
 
 const temp = (input: string) => {
   return input.split('\n')
@@ -37,6 +37,13 @@ describe('day 9', () => {
     it('solution', () => {
       expect(part1(getPuzzleInput('day9/sampleInput'))).toEqual(114)
       console.log('part1:', part1(getPuzzleInput('day9/input')))
+    })
+  })
+
+  describe('part2', () => {
+    it('solution', () => {
+      expect(part2(getPuzzleInput('day9/sampleInput'))).toEqual(2)
+      console.log('part2:', part2(getPuzzleInput('day9/input')))
     })
   })
 })
