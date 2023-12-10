@@ -25,82 +25,83 @@ export const getPointNeighbors = <T>(
 ) => {
   const neighbors: Point<T>[] = []
 
-  const left = point.x - 1 >= 0 && grid[point.y][point.x - 1]
-  const right = point.x + 1 < grid[point.y].length && grid[point.y][point.x + 1]
-  const above = point.y - 1 >= 0 && grid[point.y - 1][point.x]
-  const below = point.y + 1 < grid.length && grid[point.y + 1][point.x]
+  const left = point.col - 1 >= 0 && grid[point.row][point.col - 1]
+  const right =
+    point.col + 1 < grid[point.row].length && grid[point.row][point.col + 1]
+  const above = point.row - 1 >= 0 && grid[point.row - 1][point.col]
+  const below = point.row + 1 < grid.length && grid[point.row + 1][point.col]
 
   const leftAbove =
-    left !== false && above !== false && grid[point.y - 1][point.x - 1]
+    left !== false && above !== false && grid[point.row - 1][point.col - 1]
   const rightAbove =
-    right !== false && above !== false && grid[point.y - 1][point.x + 1]
+    right !== false && above !== false && grid[point.row - 1][point.col + 1]
   const leftBelow =
-    left !== false && below !== false && grid[point.y + 1][point.x - 1]
+    left !== false && below !== false && grid[point.row + 1][point.col - 1]
   const rightBelow =
-    right !== false && below !== false && grid[point.y + 1][point.x + 1]
+    right !== false && below !== false && grid[point.row + 1][point.col + 1]
 
   if (left !== false) {
     neighbors.push({
-      x: point.x - 1,
-      y: point.y,
+      col: point.col - 1,
+      row: point.row,
       z: left?.z || 0,
-      value: grid[point.y][point.x - 1]?.value,
+      value: grid[point.row][point.col - 1]?.value,
     })
   }
   if (right !== false) {
     neighbors.push({
-      x: point.x + 1,
-      y: point.y,
+      col: point.col + 1,
+      row: point.row,
       z: right?.z || 0,
-      value: grid[point.y][point.x + 1]?.value,
+      value: grid[point.row][point.col + 1]?.value,
     })
   }
   if (above !== false) {
     neighbors.push({
-      x: point.x,
-      y: point.y - 1,
+      col: point.col,
+      row: point.row - 1,
       z: above?.z || 0,
-      value: grid[point.y - 1][point.x]?.value,
+      value: grid[point.row - 1][point.col]?.value,
     })
   }
   if (below !== false) {
     neighbors.push({
-      x: point.x,
-      y: point.y + 1,
+      col: point.col,
+      row: point.row + 1,
       z: below?.z || 0,
-      value: grid[point.y + 1][point.x]?.value,
+      value: grid[point.row + 1][point.col]?.value,
     })
   }
   if (includeDiagonals && leftAbove !== false) {
     neighbors.push({
-      x: point.x - 1,
-      y: point.y - 1,
+      col: point.col - 1,
+      row: point.row - 1,
       z: leftAbove?.z || 0,
-      value: grid[point.y - 1][point.x - 1]?.value,
+      value: grid[point.row - 1][point.col - 1]?.value,
     })
   }
   if (includeDiagonals && rightAbove !== false) {
     neighbors.push({
-      x: point.x + 1,
-      y: point.y - 1,
+      col: point.col + 1,
+      row: point.row - 1,
       z: rightAbove?.z || 0,
-      value: grid[point.y - 1][point.x + 1]?.value,
+      value: grid[point.row - 1][point.col + 1]?.value,
     })
   }
   if (includeDiagonals && leftBelow !== false) {
     neighbors.push({
-      x: point.x - 1,
-      y: point.y + 1,
+      col: point.col - 1,
+      row: point.row + 1,
       z: leftBelow?.z || 0,
-      value: grid[point.y + 1][point.x - 1]?.value,
+      value: grid[point.row + 1][point.col - 1]?.value,
     })
   }
   if (includeDiagonals && rightBelow !== false) {
     neighbors.push({
-      x: point.x + 1,
-      y: point.y + 1,
+      col: point.col + 1,
+      row: point.row + 1,
       z: rightBelow?.z || 0,
-      value: grid[point.y + 1][point.x + 1]?.value,
+      value: grid[point.row + 1][point.col + 1]?.value,
     })
   }
 

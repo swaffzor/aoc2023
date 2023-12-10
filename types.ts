@@ -1,6 +1,6 @@
 export interface Point<T> {
-  x: number
-  y: number
+  col: number
+  row: number
   z?: number
   value?: T | string
 }

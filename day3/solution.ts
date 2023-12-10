@@ -30,8 +30,8 @@ export const extractDataToPointGrid = (input: string) => {
   const pointGrid: Grid<string> = rawGrid.map((row, y) => {
     return row.map((value, x) => {
       return {
-        x,
-        y,
+        col: x,
+        row: y,
         z: 0,
         value,
       }
@@ -75,7 +75,7 @@ export const getFullNumber = (
   neighbors: Point<string>[],
   direction?: 'left' | 'right'
 ) => {
-  let thePoint = grid[point.y][point.x]
+  let thePoint = grid[point.row][point.row]
   if (thePoint === undefined) {
     console.log('point: ', point)
   }
@@ -85,12 +85,12 @@ export const getFullNumber = (
   // filter out neighbors that are not on the same row
   const rowNeighbors = neighbors.filter(
     (neighbor) =>
-      isNumber(neighbor) && neighbor.y === thePoint.y && neighbor.z === 0
+      isNumber(neighbor) && neighbor.row === thePoint.row && neighbor.z === 0
   )
   rowNeighbors.forEach((neighbor) => {
     if (
       direction !== 'left' &&
-      neighbor.x === thePoint.x + 1 &&
+      neighbor.row === thePoint.row + 1 &&
       neighbor.z === 0
     ) {
       const idk = getFullNumber(
@@ -103,7 +103,7 @@ export const getFullNumber = (
       builtNumber.push(idk)
     } else if (
       direction !== 'right' &&
-      neighbor.x === thePoint.x - 1 &&
+      neighbor.row === thePoint.row - 1 &&
       neighbor.z === 0
     ) {
       const idk = getFullNumber(
@@ -175,19 +175,19 @@ export const getNumbers = (
   point: Point<string>, // todo: remove this point, and pass in the x,y instead
   direction?: 'left' | 'right'
 ) => {
-  let thePoint = grid[point.y][point.x]
+  let thePoint = grid[point.row][point.row]
   const builtNumber: string[] = []
   thePoint?.z === 0 && builtNumber.push(thePoint.value || '')
   thePoint.z = 1
   // filter out neighbors that are not on the same row
   const rowNeighbors = getPointNeighbors(thePoint, grid).filter(
     (neighbor) =>
-      isNumber(neighbor) && neighbor.y === thePoint.y && neighbor.z === 0
+      isNumber(neighbor) && neighbor.row === thePoint.row && neighbor.z === 0
   )
   rowNeighbors.forEach((neighbor) => {
     if (
       direction !== 'left' &&
-      neighbor.x === thePoint.x + 1 &&
+      neighbor.row === thePoint.row + 1 &&
       neighbor.z === 0
     ) {
       const idk = getFullNumber(
@@ -200,7 +200,7 @@ export const getNumbers = (
       builtNumber.push(idk)
     } else if (
       direction !== 'right' &&
-      neighbor.x === thePoint.x - 1 &&
+      neighbor.row === thePoint.row - 1 &&
       neighbor.z === 0
     ) {
       const idk = getFullNumber(
