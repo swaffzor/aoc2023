@@ -107,3 +107,20 @@ export const getPointNeighbors = <T>(
 
   return neighbors
 }
+
+export const extractDataToPointGrid = <T>(input: string) => {
+  const grid: Point<T>[][] = []
+  const lines = input.split('\n')
+
+  for (let row = 0; row < lines.length; row++) {
+    grid[row] = []
+    for (let col = 0; col < lines[row].length; col++) {
+      grid[row][col] = {
+        col,
+        row,
+        value: lines[row][col],
+      }
+    }
+  }
+  return grid
+}
