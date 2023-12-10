@@ -103,52 +103,29 @@ export interface PipePoint extends Point<Pipe> {
 }
 export const part1 = (input: string) => {
   const grid = extractDataToPointGrid<PipePoint>(input) as PipePoint[][]
-  const connectedGrid = [
-    ...grid.map((row, rowIndex) => {
-      return row.map((point, colIndex) => {
-        const neighbors = getPointNeighbors(point, grid, false)
-        return determineConnection(point, neighbors)
-      })
-    }),
-  ]
-  const connectedGrid2 = JSON.parse(JSON.stringify(connectedGrid))
-  const start = {
-    ...(findPointOnGridWithValue<Pipe>([...connectedGrid], 'S') ||
-      ({} as PipePoint)),
-  }
-
-  const pass1 = [
-    ...calcDistances([...connectedGrid], { ...start, east: undefined }),
-  ]
-  const pass2 = [
-    ...calcDistances([...connectedGrid2], {
-      ...start,
-      south: undefined,
-    }),
-  ]
-  const vals1 = pass1.map((row, y) => {
-    const inside = row.map((point, x) => {
-      const temp = Math.min(point.distance, pass2[y][x].distance)
-      const idk = temp === -1 ? '.' : temp.toString()
-      process.stdout.write(idk)
-      return idk
+  const connectedGrid = grid.map((row, rowIndex) => {
+    return row.map((point, colIndex) => {
+      const neighbors = getPointNeighbors(point, grid, false)
+      return determineConnection(point, neighbors)
     })
-    process.stdout.write('\n')
-    return inside
   })
-  const vals2 = pass2.map((row) => row.map((point) => point.distance))
-  const flattend1 = pass1.flat()
-  const flattend2 = pass2.flat()
-  const temp = flattend1
-    .map((point, index) => {
-      return Math.min(point.distance, flattend2[index].distance)
-    })
+
+  const start =
+    findPointOnGridWithValue<Pipe>(connectedGrid, 'S') || ({} as PipePoint)
+
+  const pass1 = calcDistances(connectedGrid, {
+    ...start,
+    east: undefined,
+  })
+    .flat()
     .reduce((acc, cur) => {
-      return Math.max(acc, cur)
-    })
-  return temp
+      return Math.max(acc, cur.distance)
+    }, 0)
+
+  return Math.ceil(pass1 / 2)
 }
 // 13639 is too high
+// 6820 is correct
 
 export const findPointOnGridWithValue = <T>(grid: PipePoint[][], value: T) =>
   grid.flat().find((point) => point.value === value)
@@ -240,38 +217,34 @@ export const determineConnection = (
 }
 
 export const calcDistances = (grid: PipePoint[][], start: PipePoint) => {
-  let newGrid = [...grid]
-  // grid.forEach((row) => {
-
-  // })
   let distance = 1
   let currentPoint = { ...start, distance: 0 }
   let processing = true
   while (processing) {
     if (currentPoint.north && currentPoint.from !== 'north') {
       const newPoint =
-        newGrid[currentPoint.row][currentPoint.col].north || ({} as PipePoint)
-      currentPoint = newGrid[newPoint.row][newPoint.col]
+        grid[currentPoint.row][currentPoint.col].north || ({} as PipePoint)
+      currentPoint = grid[newPoint.row][newPoint.col]
       currentPoint.from = 'south'
     } else if (currentPoint.south && currentPoint.from !== 'south') {
       const newPoint =
-        newGrid[currentPoint.row][currentPoint.col].south || ({} as PipePoint)
-      currentPoint = newGrid[newPoint.row][newPoint.col]
+        grid[currentPoint.row][currentPoint.col].south || ({} as PipePoint)
+      currentPoint = grid[newPoint.row][newPoint.col]
       currentPoint.from = 'north'
     } else if (currentPoint.east && currentPoint.from !== 'east') {
       const newPoint =
-        newGrid[currentPoint.row][currentPoint.col].east || ({} as PipePoint)
-      currentPoint = newGrid[newPoint.row][newPoint.col]
+        grid[currentPoint.row][currentPoint.col].east || ({} as PipePoint)
+      currentPoint = grid[newPoint.row][newPoint.col]
       currentPoint.from = 'west'
     } else if (currentPoint.west && currentPoint.from !== 'west') {
       const newPoint =
-        newGrid[currentPoint.row][currentPoint.col].west || ({} as PipePoint)
-      currentPoint = newGrid[newPoint.row][newPoint.col]
+        grid[currentPoint.row][currentPoint.col].west || ({} as PipePoint)
+      currentPoint = grid[newPoint.row][newPoint.col]
       currentPoint.from = 'east'
     }
     processing = currentPoint.value !== 'S'
     if (processing) currentPoint.distance = distance++
     else currentPoint.distance = 0
   }
-  return [...newGrid]
+  return grid
 }
