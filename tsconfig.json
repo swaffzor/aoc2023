@@ -1,13 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2015",
+    "target": "ES6",
     "module": "ESNext",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "sourceMap": true,
-    "resolveJsonModule": true
+    "sourceMap": true
   },
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Recommended"
