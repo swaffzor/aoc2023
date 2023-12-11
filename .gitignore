@@ -1,0 +1,51 @@
+*.js
+*.js.map
+# Ignore node_modules directory
+node_modules/
+
+# Ignore built output
+dist/
+
+# Ignore environment variables file
+.env
+
+# Ignore editor-specific files
+.vscode/
+.idea/
+
+# Ignore logs and build artifacts
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore test coverage reports
+coverage/
+
+# Ignore TypeScript declaration files
+*.d.ts
+
+# Ignore package-lock.json for npm
+package-lock.json
+
+# Ignore yarn.lock for Yarn
+yarn.lock
+
+# Ignore .env.local file
+.env.local
+
+# Ignore .env.development.local file
+.env.development.local
+
+# Ignore .env.test.local file
+.env.test.local
+
+# Ignore .env.production.local file
+.env.production.local
