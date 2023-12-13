@@ -71,7 +71,6 @@ const extractData = (input: string) => {
 export const part1 = (input: string): number => {
   const data = extractData(input)
   const temp = data.map(generatePossibilities)
-  console.log(temp)
   return temp.reduce((acc, curr) => acc + curr, 0)
 }
 // ???.### 1,1,3
@@ -103,6 +102,39 @@ export const isValid = (record: Report) => {
   return true
 }
 
+export const memo = new Map()
+
+export const generateMemoPossibilities = (record: Report) => {
+  const { row } = record
+
+  if (memo.has(row)) {
+    return memo.get(row)
+  }
+
+  const possibilities: string[] = []
+
+  const generateCombinations = (str: string) => {
+    const index = str.indexOf('?')
+    if (index === -1) {
+      possibilities.push(str)
+      return
+    }
+
+    generateCombinations(str.slice(0, index) + '.' + str.slice(index + 1))
+    generateCombinations(str.slice(0, index) + '#' + str.slice(index + 1))
+  }
+
+  generateCombinations(row)
+
+  const result = possibilities.reduce((acc, curr) => {
+    return isValid({ ...record, row: curr }) ? acc + 1 : acc
+  }, 0)
+
+  memo.set(row, result)
+
+  return result
+}
+
 export const generatePossibilities = (record: Report) => {
   const possibilities: string[] = []
 
@@ -124,19 +156,53 @@ export const generatePossibilities = (record: Report) => {
   }, 0)
 }
 
-// const calcArrangements = (record: Report) => {
-//   const possibilities = record.row
-//     .split('.')
-//     .filter((s) => !s.includes('.'))
-//     .filter((s) => s !== '')
+/*
+--- Part Two ---
 
-//   let groupCounts = record.groups
-//   const temp = possibilities.map((grouping) => {
-//     const currentGroupLength = groupCounts.shift()
-//     for (let i = 0; i + 1 < grouping.length; i++) {
-//       if (grouping[i] === '?' && grouping[i + 1] === '?') {
-//       }
-//     }
-//   })
-//   console.log(possibilities)
-// }
+As you look out at the field of springs, you feel like there are way more springs than the condition records list. When you examine the records, you discover that they were actually folded up this whole time!
+
+To unfold the records, on each row, replace the list of spring conditions with five copies of itself (separated by '?') and replace the list of contiguous groups of damaged springs with five copies of itself (separated by ,).
+
+So, this row:
+
+.# 1
+Would become:
+
+.#?.#?.#?.#?.# 1,1,1,1,1
+The first line of the above example:
+???.### 1,1,3
+would become:
+
+???.###????.###????.###????.###????.### 1,1,3,1,1,3,1,1,3,1,1,3,1,1,3
+
+In the above example, after unfolding, the number of possible arrangements for some rows is now much larger:
+
+???.### 1,1,3 - 1 arrangement
+.??..??...?##. 1,1,3 - 16384 arrangements
+?#?#?#?#?#?#?#? 1,3,1,6 - 1 arrangement
+????.#...#... 4,1,1 - 16 arrangements
+????.######..#####. 1,6,5 - 2500 arrangements
+?###???????? 3,2,1 - 506250 arrangements
+After unfolding, adding all of the possible arrangement counts together produces 525152.
+
+Unfold your condition records; what is the new sum of possible arrangement counts?
+*/
+
+export const part2 = (input: string): number => {
+  const data = extractData(input)
+  const unfolded = data.map(unfold)
+  const temp = unfolded.map(generateMemoPossibilities)
+  return temp.reduce((acc, curr) => acc + curr, 0)
+}
+
+// write a function that replace the list of spring conditions with five copies of itself (separated by ' ') and replace the list of contiguous groups of damaged springs with five copies of itself (separated by ,).
+const unfold = (record: Report) => {
+  const row = record.row + `?${record.row}`.repeat(4)
+
+  const groups = JSON.parse(JSON.stringify(record.groups))
+  for (let i = 0; i < 4; i++) {
+    groups.push(...record.groups)
+  }
+
+  return { row, groups }
+}
