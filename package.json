@@ -3,6 +3,7 @@
     "part1": "tsc && node day2/part1.js",
     "part2": "tsc && node day2/part2.js",
     "test": "jest",
+    "test:watch": "jest --watch",
     "newDay": "mkdir day$DAY && touch day$DAY/solution.ts && touch day$DAY/test.ts && touch day$DAY/input.txt && touch day$DAY/sampleInput.txt"
   },
   "type": "module",
