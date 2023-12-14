@@ -124,3 +124,69 @@ export const extractDataToPointGrid = <T>(input: string) => {
   }
   return grid
 }
+
+export const rotateCW = <T>(grid: T[][]) => {
+  const rows = grid.length
+  const newMatrix: T[][] = []
+  for (let i = 0; i < rows; i++) {
+    newMatrix[i] = []
+    for (let j = grid[i].length - 1; j >= 0; j--) {
+      newMatrix[i].push(grid[j][i])
+    }
+  }
+  return newMatrix
+}
+
+export const rotateCCW = <T>(grid: T[][]) => {
+  const rows = grid.length
+  const newMatrix: T[][] = []
+  for (let i = 0; i < rows; i++) {
+    newMatrix[i] = []
+    let colIndex = rows - 1 - i
+    for (let j = 0; j < grid[i].length; j++) {
+      newMatrix[i].push(grid[j][colIndex])
+    }
+  }
+  return newMatrix
+}
+
+export const rotatePointsCCW = (grid: Point<string>[][]) => {
+  const rows = grid.length
+  const newMatrix: Point<string>[][] = []
+
+  for (let i = 0; i < rows; i++) {
+    let colIndex = rows - 1 - i
+    newMatrix[i] = []
+    for (let j = 0; j < grid[i].length; j++) {
+      // Fetch the point
+      let point = grid[j][colIndex]
+      // Create a new point with switched rows and columns
+      let newPoint: Point<string> = { ...point, row: i, col: j }
+      // Add this new point to the newMatrix
+      newMatrix[i].push(newPoint)
+    }
+  }
+  return newMatrix
+}
+
+export const rotatePointsCW = (grid: Point<string>[][]) => {
+  const rows = grid.length
+  const newMatrix: Point<string>[][] = []
+
+  for (let i = 0; i < rows; i++) {
+    newMatrix[i] = []
+    for (let j = 0; j < grid[i].length; j++) {
+      // Fetch the point
+      let point = grid[grid[i].length - 1 - j][i]
+      // Create a new point with switched columns and rows
+      let newPoint: Point<string> = { ...point, row: i, col: j }
+      // Add this new point to the newMatrix
+      newMatrix[i].push(newPoint)
+    }
+  }
+
+  return newMatrix
+}
+
+export const gridToString = <T>(grid: Point<T>[][]) =>
+  grid.map((row) => row.map((point) => point.value).join('')).join('\n')
