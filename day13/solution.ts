@@ -12,14 +12,6 @@ For example:
 ..##..##.
 #.#.##.#.
 
-#.##..##.
-..#.##.#.
-##......#
-##......#
-..#.##.#.
-..##..##.
-#.#.##.#.
-
  01 23 45 67 8
  #. .. ## .. #
  #. .. .# .. #
@@ -68,12 +60,97 @@ This pattern reflects across the horizontal line between rows 4 and 5. Row 1 wou
 To summarize your pattern notes, add up the number of columns to the left of each vertical line of reflection; to that, also add 100 multiplied by the number of rows above each horizontal line of reflection. In the above example, the first pattern's vertical line has 5 columns to its left and the second pattern's horizontal line has 4 rows above it, a total of 405.
 
 Find the line of reflection in each of the patterns in your notes. What number do you get after summarizing all of your notes?
+
+#.###..#..### 0-
+.#...##.####. 1v
+.#...##.####. 2^
+#.###..#..### 3-
+.#######.##.# 4
+.#..##.#.#..# 5
+..#..#.##.#.. 6
+##..##..###.# 7
+######.##..#. 8X
+######.##.... 9X
+##..##..###.# A
+..#..#.##.#.. B
+.#..##.#.#..# C
+
 */
 
 import { Point } from '../types'
 import { extractDataToPointGrid } from '../utils'
 
+const getColumnFromRows = (rows: string[], col: number) =>
+  rows
+    .map((row) =>
+      row.split('').map((point, cIndex, self) => {
+        return cIndex === col ? point : ''
+      })
+    )
+    .flat()
+    .join('')
+
+const getMatches = (
+  allColumns: string[],
+  matchColumn: string,
+  index: number
+) => {
+  const foundIndex = allColumns.findIndex(
+    (col, i) => i !== index && col === matchColumn
+  )
+  if (foundIndex !== -1) {
+    // confirm each column matches
+    for (let i = 0; i < matchColumn.length; i++) {
+      const start = foundIndex + i
+      const end = allColumns.length - 1 - i
+      if (start >= end) {
+        return start
+      }
+      const left = allColumns[start]
+      const right = allColumns[end]
+      if (left !== right) {
+        break
+      }
+    }
+  }
+
+  return 0
+}
+
 export const part1 = (input: string) => {
+  const patterns = input.split('\n\n')
+  const reflections = patterns.map((pattern) => {
+    const rows = pattern.split('\n')
+    const points: number[] = []
+
+    // check for vertical reflection
+    const columnSize = rows[0].length
+    const allColumns: string[] = []
+    for (let i = 0; i < columnSize; i++) {
+      allColumns.push(getColumnFromRows(rows, i))
+    }
+    const firstColumn = getColumnFromRows(rows, 0)
+    const lastColumn = getColumnFromRows(rows, rows[0].length - 1)
+    const firstPass = getMatches(allColumns, firstColumn, 0)
+    const lastPass = getMatches(allColumns, lastColumn, columnSize - 1)
+    firstPass > 0 && points.push(firstPass)
+    lastPass > 0 && points.push(lastPass)
+
+    // check for horizontal reflection
+    const allRows = [...rows]
+    const firstRow = rows[0]
+    const lastRow = rows[rows.length - 1]
+    const firstHPass = getMatches(allRows, firstRow, 0)
+    const lastHPass = getMatches(allRows, lastRow, rows.length - 1)
+    firstHPass > 0 && points.push(firstHPass * 100)
+    lastHPass > 0 && points.push(lastHPass * 100)
+
+    return points //.reduce((acc, curr) => acc + curr, 0)
+  })
+  return reflections.flat().reduce((acc, curr) => acc + curr, 0)
+}
+
+export const part1_1 = (input: string) => {
   const data = input.split('\n\n')
   const answer: number[] = []
 
@@ -94,6 +171,7 @@ export const part1 = (input: string) => {
 // 34511 is too high
 // 28428 is too low
 
+// 26411
 // 5819
 // 5751
 // 5714
@@ -136,25 +214,44 @@ export const checkIsVerticalReflection = (grid: Point<string>[][]) => {
           }
           verticalLIne = startIndex
         }
-        // verticalLIne =
-        //   (leftIndex < 2 && rightIndex === columnLength - 1) ||
-        //   (leftIndex === 0 && rightIndex < columnLength - 2)
-        //     ? verticalLIne
-        //     : 0
         break
       }
     }
   }
-  return verticalLIne
-}
 
-//0 #...##..#
-//1 #....#..#
-//2 ..##..###
-//3 #####.##.
-//4 #####.##.
-//5 ..##..###
-//6 #....#..#
+  if (verticalLIne !== 0) {
+    const iterations = Math.floor(columnLength / 2)
+    for (let i = 0; i < iterations; i++) {
+      const left = flatGrid.filter(
+        (point) => point?.col === verticalLIne - 1 - i
+      )
+      const right = flatGrid.filter((point) => point?.col === verticalLIne + i)
+      if (!columnsEqual(left, right)) {
+        return 0
+      }
+      if (verticalLIne + i === columnLength - 1) {
+        // || verticalLIne - 1 - i === 0) {
+        // we've reached a boundary of the array
+        console.log('reached boundary')
+        return verticalLIne
+      }
+      if (verticalLIne - 1 - i === 0) {
+        console.log('reached boundary')
+        return verticalLIne
+      }
+    }
+  }
+  return 0
+}
+//  012345678
+//    ><
+//0 #...##..#  #. . . ##..#
+//1 #....#..#  #. . . .#..#
+//2 ..##..###  .. # # ..###
+//3 #####.##.  ## # # #.##.
+//4 #####.##.  ## # # #.##.
+//5 ..##..###  .. # # ..###
+//6 #....#..#  #. . . .#..#
 export const isHorizontalReflection = (rows: string[]) => {
   let horizontalLine = 0
 
@@ -174,21 +271,45 @@ export const isHorizontalReflection = (rows: string[]) => {
           const start = rows[startIndex]
           const end = rows[endIndex]
           if (start !== end) {
-            horizontalLine = 0
+            // horizontalLine = 0
             break
           }
           horizontalLine = endIndex
         }
-        // horizontalLine =
-        //   (topIndex < 2 && bottomIndex === rows.length - 1) ||
-        //   (topIndex === 0 && bottomIndex >= rows.length - 2)
-        //     ? horizontalLine
-        //     : 0
         break
       }
       break
     }
   }
 
-  return horizontalLine * 100
+  // if horizontalLine is not 0, verify that the reflection doesn't have leftovers on BOTH sides after folding
+  // 1 #...##..# 1
+  // 2 #....#..# 2
+  // 3 ..##..### 3
+  // 4v#####.##.v4
+  // 5^#####.##.^5
+  // 6 ..##..### 6
+  // 7 #....#..# 7
+  if (horizontalLine !== 0) {
+    const iterations = Math.floor(rows.length / 2)
+    for (let i = 0; i < iterations; i++) {
+      const top = rows[horizontalLine - 1 - i]
+      const bottom = rows[horizontalLine + i]
+      if (bottom !== top) {
+        return 0
+      }
+      if (horizontalLine + i === rows.length - 1) {
+        // || horizontalLine - 1 - i === 0) {
+        // we've reached a boundary of the array
+        console.log('reached boundary')
+        return horizontalLine * 100
+      }
+      if (horizontalLine - 1 - i === 0) {
+        console.log('reached boundary')
+        return horizontalLine * 100
+      }
+    }
+  }
+  // there is another case where the reflection is not perfect
+  return 0
 }
