@@ -66,22 +66,37 @@ interface Beam {
   direction: string
 }
 
-interface BeamState {
-  point: Point<string>
-  direction: string
-}
-
 // 8034 is CORRECT
 // 7872 is not correct
 // 2518 is too low
 // 1316 is too low
-export const part1 = (input: string) => {
+export const part1 = (input: string, printData = true) => {
   const grid = extractDataToPointGrid<string>(input).map((r) =>
     r.map((p) => {
       return { ...p, z: 0 }
     })
   ) as Tile[][]
+  const energized = energize(
+    grid,
+    {
+      point: {
+        row: 0,
+        col: 0,
+        z: 0,
+        value: grid[0][0].value,
+      },
+      direction: '>',
+    },
+    printData
+  )
+  return energized
+}
 
+export const energize = (
+  grid: Tile[][],
+  startPoint: Beam,
+  printData = true
+) => {
   const logData = () =>
     console.log(
       'energized:',
@@ -94,11 +109,11 @@ export const part1 = (input: string) => {
       queue.length
     )
 
-  grid[0][0].z = 1
+  grid[startPoint.point.row][startPoint.point.col].z = 1
+  let currentPoint = grid[startPoint.point.row][startPoint.point.col]
   let loopCount = 0
-  let currentPoint = grid[0][0]
   let currentDirection = '>'
-  let queue: BeamState[] = [
+  let queue: Beam[] = [
     {
       point: currentPoint,
       direction: currentDirection,
@@ -119,22 +134,26 @@ export const part1 = (input: string) => {
 
     const nextPositions = moveBeam(beam, grid)
     nextPositions.forEach(([point, direction]) => {
-      grid[point.row][point.col].z = 1
+      // grid[point.row][point.col].z = 1
       queue.push({ point, direction })
     })
+    if (grid[beam.point.row][beam.point.col].z !== 1) {
+      grid[beam.point.row][beam.point.col].z = 1
+      loopCount++
+    }
 
-    loopCount++
-    logGrid(grid)
-    logData()
+    printData && logGrid(grid)
+    // printData && logData()
   }
 
-  logGrid(grid)
+  printData && logGrid(grid)
   return grid
     .map((row) => row.filter((p) => p.z === 1).length)
     .reduce((a, b) => a + b)
 }
 
 const logGrid = (grid: Tile[][]) => {
+  console.clear()
   console.log(
     grid
       .map((r) => r.map((p) => (p.z === 1 ? '#' : p.value)).join(''))
@@ -252,5 +271,81 @@ const moveBeam = (beam: Beam, grid: Tile[][]): [Tile, string][] => {
   }) as [Tile, string][]
   return step2
 }
-
 console.log('part 1', part1(getPuzzleInput('input', 'day16')))
+
+/*
+--- Part Two ---
+
+As you try to work out what might be wrong, the reindeer tugs on your shirt and leads you to a nearby control panel. There, a collection of buttons lets you align the contraption so that the beam enters from any edge tile and heading away from that edge. (You can choose either of two directions for the beam if it starts on a corner; for instance, if the beam starts in the bottom-right corner, it can start heading either left or upward.)
+
+So, the beam could start on any tile in the top row (heading downward), any tile in the bottom row (heading upward), any tile in the leftmost column (heading right), or any tile in the rightmost column (heading left). To produce lava, you need to find the configuration that energizes as many tiles as possible.
+
+In the above example, this can be achieved by starting the beam in the fourth tile from the left in the top row:
+
+.|<2<\....
+|v-v\^....
+.v.v.|->>>
+.v.v.v^.|.
+.v.v.v^...
+.v.v.v^..\
+.v.v/2\\..
+<-2-/vv|..
+.|<<<2-|.\
+.v//.|.v..
+Using this configuration, 51 tiles are energized:
+
+.#####....
+.#.#.#....
+.#.#.#####
+.#.#.##...
+.#.#.##...
+.#.#.##...
+.#.#####..
+########..
+.#######..
+.#...#.#..
+Find the initial beam configuration that energizes the largest number of tiles; how many tiles are energized in that configuration?
+ */
+
+export const part2 = (input: string) => {
+  const grid = extractDataToPointGrid<string>(input).map((r) =>
+    r.map((p) => {
+      return { ...p, z: 0 }
+    })
+  ) as Tile[][]
+
+  const startEdges = getEveryStartEdge(grid)
+  const energized = startEdges.map((edge) => {
+    const gridCopy = grid.map((r) => r.map((p) => ({ ...p }))) as Tile[][]
+    return energize(gridCopy, edge, false)
+  })
+
+  return Math.max(...energized)
+}
+
+const getEveryStartEdge = (grid: Tile[][]) => {
+  const topRow = grid[0]
+  const bottomRow = grid[grid.length - 1]
+  const leftCol = grid.map((r) => r[0])
+  const rightCol = grid.map((r) => r[r.length - 1])
+  const topBeams: Beam[] = topRow.map((p) => ({ point: p, direction: 'v' }))
+
+  const bottomBeams: Beam[] = bottomRow.map((p) => ({
+    point: p,
+    direction: '^',
+  }))
+
+  const leftBeams: Beam[] = leftCol.map((p) => ({
+    point: p,
+    direction: '>',
+  }))
+
+  const rightBeams: Beam[] = rightCol.map((p) => ({
+    point: p,
+    direction: '<',
+  }))
+
+  return [...topBeams, ...bottomBeams, ...leftBeams, ...rightBeams]
+}
+
+console.log('part 2', part2(getPuzzleInput('input', 'day16')))
