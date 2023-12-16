@@ -95,28 +95,73 @@ const getMatches = (
   matchColumn: string,
   type: 'vertical' | 'horizontal'
 ) => {
-  const foundIndex = allColumns
+  let foundIndex = allColumns
     .map((col, i) => (col === matchColumn ? i : -1))
     .filter((i) => i > -1)
-  if (foundIndex.length > 1) {
-    // confirm each column matches
-    for (let i = 0; i < matchColumn.length; i++) {
-      const start = foundIndex[0] + i
-      const end = foundIndex[foundIndex.length - 1] - i
-      if ((end - start) % 2 === 0) {
-        return 0
-      }
-      if (start > end) {
-        return start
-      }
-      const leftt = allColumns[start]
-      const right = allColumns[end]
-      if (leftt !== right) {
-        break
+
+  if (foundIndex.length > 2) {
+    const first = foundIndex[0]
+    const last = foundIndex[foundIndex.length - 1]
+    if ((last - first) % 2 === 0) {
+      const mid = Math.floor(foundIndex.length / 2)
+      const middle = foundIndex[mid]
+      const midLessFirst = (middle - first) % 2 === 0
+      const midLessLast = (last - middle) % 2 === 0
+      if (midLessFirst && midLessLast) {
+        const temp = confirmMatches(allColumns, matchColumn, [middle, last])
+        const temp2 = confirmMatches(allColumns, matchColumn, [first, middle])
+        return temp > temp2 ? temp : temp2
+      } else if (midLessFirst) {
+        const temp = confirmMatches(allColumns, matchColumn, [first, middle])
+        return temp
+      } else {
+        const temp = confirmMatches(allColumns, matchColumn, [middle, last])
+        return temp
       }
     }
+  } else if (foundIndex.length > 1) {
+    return confirmMatches(allColumns, matchColumn, foundIndex)
+    // confirm each column matches
+    // for (let i = 0; i < matchColumn.length; i++) {
+    //   const start = foundIndex[0] + i
+    //   const end = foundIndex[foundIndex.length - 1] - i
+    //   if ((end - start) % 2 === 0) {
+    //     return 0
+    //   }
+    //   if (start > end) {
+    //     return start
+    //   }
+    //   const leftt = allColumns[start]
+    //   const right = allColumns[end]
+    //   if (leftt !== right) {
+    //     break
+    //   }
+    // }
   }
 
+  return 0
+}
+
+const confirmMatches = (
+  allColumns: string[],
+  matchColumn: string,
+  foundIndex: number[]
+) => {
+  for (let i = 0; i < matchColumn.length; i++) {
+    const start = foundIndex[0] + i
+    const end = foundIndex[foundIndex.length - 1] - i
+    if ((end - start) % 2 === 0) {
+      return 0
+    }
+    if (start > end) {
+      return start
+    }
+    const leftt = allColumns[start]
+    const right = allColumns[end]
+    if (leftt !== right) {
+      break
+    }
+  }
   return 0
 }
 
@@ -137,7 +182,10 @@ export const part1 = (input: string) => {
     const firstPass = getMatches(allColumns, firstColumn, 'vertical')
     const lastPass = getMatches(allColumns, lastColumn, 'vertical')
     firstPass > 0 && points.push(firstPass)
-    lastPass > 0 && points.push(lastPass)
+    lastPass > 0 &&
+      firstColumn !== lastColumn &&
+      firstPass !== lastPass &&
+      points.push(lastPass)
 
     // check for horizontal reflection
     if (points.length === 0) {
@@ -147,7 +195,7 @@ export const part1 = (input: string) => {
       const firstHPass = getMatches(allRows, firstRow, 'horizontal')
       const lastHPass = getMatches(allRows, lastRow, 'horizontal')
       firstHPass > 0 && points.push(firstHPass * 100)
-      lastHPass > 0 && points.push(lastHPass * 100)
+      lastHPass > 0 && firstRow !== lastRow && points.push(lastHPass * 100)
     }
 
     return points //.reduce((acc, curr) => acc + curr, 0)
