@@ -93,22 +93,25 @@ const getColumnFromRows = (rows: string[], col: number) =>
 const getMatches = (
   allColumns: string[],
   matchColumn: string,
-  index: number
+  type: 'vertical' | 'horizontal'
 ) => {
-  const foundIndex = allColumns.findIndex(
-    (col, i) => i !== index && col === matchColumn
-  )
-  if (foundIndex !== -1) {
+  const foundIndex = allColumns
+    .map((col, i) => (col === matchColumn ? i : -1))
+    .filter((i) => i > -1)
+  if (foundIndex.length > 1) {
     // confirm each column matches
     for (let i = 0; i < matchColumn.length; i++) {
-      const start = foundIndex + i
-      const end = allColumns.length - 1 - i
-      if (start >= end) {
+      const start = foundIndex[0] + i
+      const end = foundIndex[foundIndex.length - 1] - i
+      if ((end - start) % 2 === 0) {
+        return 0
+      }
+      if (start > end) {
         return start
       }
-      const left = allColumns[start]
+      const leftt = allColumns[start]
       const right = allColumns[end]
-      if (left !== right) {
+      if (leftt !== right) {
         break
       }
     }
@@ -131,19 +134,21 @@ export const part1 = (input: string) => {
     }
     const firstColumn = getColumnFromRows(rows, 0)
     const lastColumn = getColumnFromRows(rows, rows[0].length - 1)
-    const firstPass = getMatches(allColumns, firstColumn, 0)
-    const lastPass = getMatches(allColumns, lastColumn, columnSize - 1)
+    const firstPass = getMatches(allColumns, firstColumn, 'vertical')
+    const lastPass = getMatches(allColumns, lastColumn, 'vertical')
     firstPass > 0 && points.push(firstPass)
     lastPass > 0 && points.push(lastPass)
 
     // check for horizontal reflection
-    const allRows = [...rows]
-    const firstRow = rows[0]
-    const lastRow = rows[rows.length - 1]
-    const firstHPass = getMatches(allRows, firstRow, 0)
-    const lastHPass = getMatches(allRows, lastRow, rows.length - 1)
-    firstHPass > 0 && points.push(firstHPass * 100)
-    lastHPass > 0 && points.push(lastHPass * 100)
+    if (points.length === 0) {
+      const allRows = [...rows]
+      const firstRow = rows[0]
+      const lastRow = rows[rows.length - 1]
+      const firstHPass = getMatches(allRows, firstRow, 'horizontal')
+      const lastHPass = getMatches(allRows, lastRow, 'horizontal')
+      firstHPass > 0 && points.push(firstHPass * 100)
+      lastHPass > 0 && points.push(lastHPass * 100)
+    }
 
     return points //.reduce((acc, curr) => acc + curr, 0)
   })
@@ -169,8 +174,11 @@ export const part1_1 = (input: string) => {
 // 35111
 
 // 34511 is too high
+// 30543 X
+// 29543 X
 // 28428 is too low
 
+// 26309
 // 26411
 // 5819
 // 5751
