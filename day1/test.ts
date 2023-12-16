@@ -12,7 +12,7 @@ describe('getPuzzleInput', () => {
 
   it('should return the puzzle input as an array if an iterator is passed', () => {
     const file = 'day1/sampleInput'
-    const puzzleInput = getPuzzleInput(file, (input: string) =>
+    const puzzleInput = getPuzzleInput(file, undefined, (input: string) =>
       input.split('\n')
     )
     expect(puzzleInput).toEqual([
