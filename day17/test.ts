@@ -1,4 +1,4 @@
-import { getPuzzleInput } from 'utils'
+import { getPuzzleInput } from '../utils'
 import { part1 } from './solution'
 
 describe('day 17', () => {

@@ -21,7 +21,7 @@ export const getPuzzleInput = <T = string>(
 export const getPointNeighbors = <T>(
   point: Point<T>,
   grid: Grid<T>,
-  includeDiagonals = true
+  includeDiagonals = false
 ) => {
   const neighbors: Point<T>[] = []
 
