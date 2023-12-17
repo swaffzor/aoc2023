@@ -53,17 +53,121 @@ Ultimately, in this example, 46 tiles become energized.
 The light isn't energizing enough tiles to produce lava; to debug the contraption, you need to start by analyzing the current situation. With the beam starting in the top-left heading right, how many tiles end up being energized?
 */
 
-import { Point } from '../types'
-import {
-  extractDataToPointGrid,
-  getPointNeighbors,
-  getPuzzleInput,
-} from '../utils'
+import { Grid, Point } from '../types'
+// import { getPuzzleInput } from '../utils'
+// import * as path from 'path'
 
-type Tile = Point<string>
-interface Beam {
+export type Tile = Point<string>
+export interface Beam {
   point: Point<string>
   direction: string
+}
+
+export const getPointNeighbors = <T>(
+  point: Point<T>,
+  grid: Grid<T>,
+  includeDiagonals = true
+) => {
+  const neighbors: Point<T>[] = []
+
+  const left = point.col - 1 >= 0 && grid[point.row][point.col - 1]
+  const right =
+    point.col + 1 < grid[point.row].length && grid[point.row][point.col + 1]
+  const above = point.row - 1 >= 0 && grid[point.row - 1][point.col]
+  const below = point.row + 1 < grid.length && grid[point.row + 1][point.col]
+
+  const leftAbove =
+    left !== false && above !== false && grid[point.row - 1][point.col - 1]
+  const rightAbove =
+    right !== false && above !== false && grid[point.row - 1][point.col + 1]
+  const leftBelow =
+    left !== false && below !== false && grid[point.row + 1][point.col - 1]
+  const rightBelow =
+    right !== false && below !== false && grid[point.row + 1][point.col + 1]
+
+  if (left !== false) {
+    neighbors.push({
+      col: point.col - 1,
+      row: point.row,
+      z: left?.z || 0,
+      value: grid[point.row][point.col - 1]?.value,
+    })
+  }
+  if (right !== false) {
+    neighbors.push({
+      col: point.col + 1,
+      row: point.row,
+      z: right?.z || 0,
+      value: grid[point.row][point.col + 1]?.value,
+    })
+  }
+  if (above !== false) {
+    neighbors.push({
+      col: point.col,
+      row: point.row - 1,
+      z: above?.z || 0,
+      value: grid[point.row - 1][point.col]?.value,
+    })
+  }
+  if (below !== false) {
+    neighbors.push({
+      col: point.col,
+      row: point.row + 1,
+      z: below?.z || 0,
+      value: grid[point.row + 1][point.col]?.value,
+    })
+  }
+  if (includeDiagonals && leftAbove !== false) {
+    neighbors.push({
+      col: point.col - 1,
+      row: point.row - 1,
+      z: leftAbove?.z || 0,
+      value: grid[point.row - 1][point.col - 1]?.value,
+    })
+  }
+  if (includeDiagonals && rightAbove !== false) {
+    neighbors.push({
+      col: point.col + 1,
+      row: point.row - 1,
+      z: rightAbove?.z || 0,
+      value: grid[point.row - 1][point.col + 1]?.value,
+    })
+  }
+  if (includeDiagonals && leftBelow !== false) {
+    neighbors.push({
+      col: point.col - 1,
+      row: point.row + 1,
+      z: leftBelow?.z || 0,
+      value: grid[point.row + 1][point.col - 1]?.value,
+    })
+  }
+  if (includeDiagonals && rightBelow !== false) {
+    neighbors.push({
+      col: point.col + 1,
+      row: point.row + 1,
+      z: rightBelow?.z || 0,
+      value: grid[point.row + 1][point.col + 1]?.value,
+    })
+  }
+
+  return neighbors
+}
+
+export const extractDataToPointGrid = <T>(input: string) => {
+  const grid: Point<T>[][] = []
+  const lines = input.split('\n')
+
+  for (let row = 0; row < lines.length; row++) {
+    grid[row] = []
+    for (let col = 0; col < lines[row].length; col++) {
+      grid[row][col] = {
+        col,
+        row,
+        value: lines[row][col],
+      }
+    }
+  }
+  return grid
 }
 
 // 8034 is CORRECT
@@ -162,7 +266,7 @@ const logGrid = (grid: Tile[][]) => {
   )
 }
 
-const moveBeam = (beam: Beam, grid: Tile[][]): [Tile, string][] => {
+export const moveBeam = (beam: Beam, grid: Tile[][]): [Tile, string][] => {
   const { point, direction } = beam
   const neighbors = getPointNeighbors(point, grid, false)
   const neighborBelow = neighbors.find(
@@ -271,7 +375,7 @@ const moveBeam = (beam: Beam, grid: Tile[][]): [Tile, string][] => {
   }) as [Tile, string][]
   return step2
 }
-console.log('part 1', part1(getPuzzleInput('input', 'day16')))
+// console.log('part 1', part1(getPuzzleInput('input', 'day16')))
 
 /*
 --- Part Two ---
@@ -348,4 +452,4 @@ const getEveryStartEdge = (grid: Tile[][]) => {
   return [...topBeams, ...bottomBeams, ...leftBeams, ...rightBeams]
 }
 
-console.log('part 2', part2(getPuzzleInput('input', 'day16')))
+// console.log('part 2', part2(getPuzzleInput('input', 'day16')))
