@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { Grid, Point } from './types'
+import { Grid, Point, SimpleGraph, SquareGrid } from './types'
 
 export const getPuzzleInput = <T = string>(
   fileName: string,
@@ -190,3 +190,73 @@ export const rotatePointsCW = (grid: Point<string>[][]) => {
 
 export const gridToString = <T>(grid: Point<T>[][]) =>
   grid.map((row) => row.map((point) => point.value).join('')).join('\n')
+
+export const makeSquareGrid = <T>(
+  width: number,
+  height: number,
+  walls: Set<string> = new Set()
+): SquareGrid<T> => {
+  const inBounds = (point: Point<T>) =>
+    point.col >= 0 && point.col < width && point.row >= 0 && point.row < height
+
+  const neighbors = (point: string) => {
+    const [col, row] = point.split(',').map((n) => Number(n))
+    const cardinalNeighbors = [
+      { col: col - 1, row: row },
+      { col: col + 1, row: row },
+      { col: col, row: row - 1 },
+      { col: col, row: row + 1 },
+    ]
+    const results = cardinalNeighbors.filter(inBounds)
+    return results
+      .filter((p) => !walls.has(`${p.col},${p.row}`))
+      .map((p) => {
+        return {
+          ...p,
+          id: `${p.col},${p.row}`,
+        }
+      })
+  }
+
+  return {
+    width,
+    height,
+    walls,
+    inBounds,
+    neighbors,
+  }
+}
+
+// can be used for distance maps, procedural map generation, etc.
+export const breadthSearch = <T>(
+  grid: SimpleGraph<T>,
+  start: string,
+  goal: string,
+  earlyExit = false
+) => {
+  const frontier = new Set<string>()
+  frontier.add(start)
+  const cameFrom = {} as Record<string, string>
+  cameFrom[start] = '' // just started, no previous point
+
+  while (frontier.size > 0) {
+    const current = frontier.values().next().value as string
+
+    if (earlyExit && current === goal) {
+      break
+    }
+
+    const neighbors = grid.neighbors(current)
+
+    for (const next of neighbors) {
+      const id = `${next.col},${next.row}`
+      if (!(id in cameFrom)) {
+        frontier.add(id)
+        cameFrom[id] = current
+      }
+    }
+
+    frontier.delete(current)
+  }
+  return cameFrom
+}

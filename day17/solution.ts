@@ -45,8 +45,13 @@ This path never moves more than three consecutive blocks in the same direction a
 Directing the crucible from the lava pool to the machine parts factory, but not moving more than three consecutive blocks in the same direction, what is the least heat loss it can incur?
 */
 
-import { Point } from 'types'
-import { extractDataToPointGrid, getPointNeighbors } from '../utils'
+import { Point, SquareGrid } from 'types'
+import {
+  breadthSearch,
+  extractDataToPointGrid,
+  getPointNeighbors,
+  makeSquareGrid,
+} from '../utils'
 
 interface HotPoint extends Point<number> {
   closest: Point<number>
@@ -84,6 +89,20 @@ export const part1 = (input: string) => {
     })
   )
 
+  // ********************************************************************
+  const walls = new Set<string>()
+  walls.add('1,1')
+  walls.add('1,2')
+  walls.add('1,3')
+
+  const mygrid = makeSquareGrid<number>(10, 10, walls)
+  mygrid.walls.add('2,2')
+
+  const parents = breadthSearch<number>(mygrid, '0,0', '2,3')
+  const searchGraph = logGridValues(mygrid, parents, '0,0')
+  console.log(searchGraph.join('\n'))
+  // ********************************************************************
+
   let pathGrid: Point<string>[][] = hotGrid.map((row) =>
     row.map((point) => {
       const pathPoint = {
@@ -103,7 +122,7 @@ export const part1 = (input: string) => {
   let crucible: Crucible = {
     col: start.col,
     row: start.col,
-    dir: relativeDir === 's' ? '^' : relativeDir === 'r' ? '<' : '>',
+    dir: relativeDir,
     heatLoss: (Number(start?.value) || 0) * -1, // account for the first point not being counted
     straightCount: 0,
     lastPoint: {} as Point<number>,
@@ -145,11 +164,11 @@ export const part1 = (input: string) => {
       next = hotGrid[next.row][next.col]
     }
 
-    crucible = makeTurn(
-      crucible,
-      determineDirection(crucible, next),
-      mappedPoints
-    )
+    // crucible = makeTurn(
+    //   crucible,
+    //   determineDirection(crucible, next),
+    //   mappedPoints
+    // )
     // crucible = {
     //   dir: makeTurn(
     //     crucible,
@@ -217,16 +236,16 @@ const getNextDirPoint = (
 }
 
 const determineDirection = (point: Point<number>, nextPoint: Point<number>) => {
-  if (nextPoint.col === point.col + 1 && nextPoint.row === point.row) {
-    return 'r'
+  if (nextPoint.col > point.col && nextPoint.row === point.row) {
+    return '>'
   }
-  if (nextPoint.col === point.col - 1 && nextPoint.row === point.row) {
-    return 'l'
+  if (nextPoint.col < point.col && nextPoint.row === point.row) {
+    return '<'
   }
-  if (nextPoint.row === point.row + 1 && nextPoint.col === point.col) {
-    return 's'
+  if (nextPoint.row > point.row && nextPoint.col === point.col) {
+    return 'v'
   }
-  return 'b'
+  return '^'
 }
 
 const makeTurn = (
@@ -344,3 +363,100 @@ const mapPoints = (grid: Point<number>[][]) => {
 
   return mappedPoints
 }
+
+// a function to log each value in the grid to the console in a grid format
+const logGridValues = <T>(
+  grid: SquareGrid<T>,
+  parents?: Record<string, string>,
+  start?: string,
+  goal?: string
+) => {
+  // create an array of arrays to hold the values
+  const gridValues: string[][] = []
+  // loop through each row
+  for (let row = 0; row < grid.height; row++) {
+    // create a new array to hold the values for this row
+    const newRow: string[] = []
+    // loop through each column
+    for (let col = 0; col < grid.width; col++) {
+      const id = `${col},${row}`
+      if (goal && id === goal) {
+        newRow.push('G')
+      } else if (start && id === start) {
+        newRow.push('S')
+      }
+      // if this point is the parent, put either a <^>v for the direction relative between the parent and the current point
+      else if (parents && !!parents[id]) {
+        const parent = parents![id]
+        const [parentCol, parentRow] = parent.split(',').map((n) => Number(n))
+        const relativeDir = determineDirection(
+          { col: parentCol, row: parentRow },
+          { col, row }
+        )
+        newRow.push(relativeDir)
+      } else {
+        // get the value at this point
+        // add the value to the row array
+        newRow.push(grid.walls.has(`${col},${row}`) ? 'x' : ' ')
+      }
+    }
+    // add the row array to the gridValues array
+    gridValues.push(newRow)
+  }
+  return gridValues
+}
+
+// const reconstructPath = (
+//   start: Point<number>,
+//   goal: Point<number>,
+//   cameFrom: Record<string, Point<number>>
+// ) => {
+//   let current = goal
+//   // A path is a sequence of edges, but often it’s easier to store the nodes
+//   const path: string[] = []
+
+//   while (JSON.stringify(current) !== JSON.stringify(start)) {
+//     const index = current?.col + ',' + current?.row
+//     path.push(index)
+//     current = cameFrom[index]
+//   }
+//   path.push(start.col + ',' + start.row) // optional
+//   path.reverse() // optional
+// }
+
+// export const dijkstra = (
+//   grid: Point<number>[][],
+//   start: Point<number>,
+//   goal: Point<number>
+// ) => {
+//   const frontier = new Map<Point<number>, number>()
+//   frontier.set(start, 0)
+
+//   const cameFrom = {} as Record<string, Point<number>>
+//   cameFrom[start.col + ',' + start.row] = {} as Point<number> // just started, no previous point
+
+//   const costSoFar = {} as Record<string, number>
+//   costSoFar[start.col + ',' + start.row] = 0
+
+//   while (frontier.size > 0) {
+//     const current = frontier.values().next().value
+
+//     if (current?.col === goal.col && current?.row === goal.row) {
+//       break
+//     }
+
+//     const neighbors = getPointNeighbors(current, grid)
+//     // const test = neighbors.filter((n) => Number(n.value) < current.value)
+
+//     for (const next of neighbors) {
+//       const newCost = costSoFar[current.col + ',' + current.row] + Number(next.value)
+//       const nextIndex = next.col + ',' + next.row
+//       if (!(nextIndex in costSoFar)) {
+//         frontier.add(next)
+//         cameFrom[nextIndex] = current
+//       }
+//     }
+
+//     frontier.delete(current)
+//   }
+// }
