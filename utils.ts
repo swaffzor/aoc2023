@@ -202,6 +202,7 @@ export const gridToString = <T>(grid: Point<T>[][]) =>
 export const makeSquareGrid = <T>(
   width: number,
   height: number,
+  edgePoints: Record<string, Point<T>> = {},
   walls: Set<string> = new Set()
 ): SquareGrid<T> => {
   const inBounds = (point: Point<T>) =>
@@ -216,31 +217,103 @@ export const makeSquareGrid = <T>(
       { col: col, row: row + 1 },
     ]
     const results = cardinalNeighbors.filter(inBounds)
-    return results
+    const tempEdges: Record<string, Point<T>> = {}
+    results
       .filter((p) => !walls.has(`${p.col},${p.row}`))
-      .map((p) => {
-        return {
-          ...p,
-          id: `${p.col},${p.row}`,
-        }
+      .forEach((p) => {
+        const edgeId = `${p.col},${p.row}`
+        tempEdges[edgeId] = p
+        return p as Point<T>
       })
+    return tempEdges
+  }
+
+  const edges = (cost?: number) => {
+    const tempEdges: Record<string, Point<T>> = { ...edgePoints }
+    for (let row = 0; row < height; row++) {
+      for (let col = 0; col < width; col++) {
+        const point = { col, row }
+        const edgeId = `${col},${row}`
+        tempEdges[edgeId] = point
+      }
+    }
+    return tempEdges
   }
 
   return {
     width,
     height,
     walls,
+    edges,
     inBounds,
     neighbors,
   }
 }
 
+export const determineDirection = (
+  point: Point<number>,
+  nextPoint: Point<number>
+) => {
+  if (nextPoint.col > point.col && nextPoint.row === point.row) {
+    return '>'
+  }
+  if (nextPoint.col < point.col && nextPoint.row === point.row) {
+    return '<'
+  }
+  if (nextPoint.row > point.row && nextPoint.col === point.col) {
+    return 'v'
+  }
+  return '^'
+}
+
+// a function to log each value in the grid to the console in a grid format
+export const logGridValues = <T>(
+  grid: SquareGrid<T>,
+  parents?: Record<string, string>,
+  start?: string,
+  goal?: string
+) => {
+  // create an array of arrays to hold the values
+  const gridValues: string[][] = []
+  // loop through each row
+  for (let row = 0; row < grid.height; row++) {
+    // create a new array to hold the values for this row
+    const newRow: string[] = []
+    // loop through each column
+    for (let col = 0; col < grid.width; col++) {
+      const id = `${col},${row}`
+      if (goal && id === goal) {
+        newRow.push('G')
+      } else if (start && id === start) {
+        newRow.push('S')
+      }
+      // if this point is the parent, put either a <^>v for the direction relative between the parent and the current point
+      else if (parents && !!parents[id]) {
+        const parent = parents![id]
+        const [parentCol, parentRow] = parent.split(',').map((n) => Number(n))
+        const relativeDir = determineDirection(
+          { col: parentCol, row: parentRow },
+          { col, row }
+        )
+        newRow.push(relativeDir)
+      } else {
+        // get the value at this point
+        // add the value to the row array
+        const inWalls = grid.walls.has(`${col},${row}`)
+        newRow.push(inWalls ? 'x' : ' ')
+      }
+    }
+    // add the row array to the gridValues array
+    gridValues.push(newRow)
+  }
+  return gridValues
+}
+
 // can be used for distance maps, procedural map generation, etc.
 export const breadthSearch = <T>(
   grid: SimpleGraph<T>,
-  start: string,
-  goal: string,
-  earlyExit = false
+  start: string = '0,0',
+  goal?: string
 ) => {
   const frontier = new Set<string>()
   frontier.add(start)
@@ -250,11 +323,11 @@ export const breadthSearch = <T>(
   while (frontier.size > 0) {
     const current = frontier.values().next().value as string
 
-    if (earlyExit && current === goal) {
+    if (current === goal) {
       break
     }
 
-    const neighbors = grid.neighbors(current)
+    const neighbors = Object.values(grid.neighbors(current))
 
     for (const next of neighbors) {
       const id = `${next.col},${next.row}`
