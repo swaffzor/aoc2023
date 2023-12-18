@@ -30,3 +30,19 @@ export interface SquareGrid<T> {
   inBounds: (point: Point<T>) => boolean
   neighbors: (point: string) => Point<T>[] // point is a string of the form "col,row"
 }
+
+export interface WeightedGraph<T> extends Graph<T> {
+  cost: (from: Location<T>, to: Location<T>) => number
+}
+
+export interface WeightedGrid<T> extends SquareGrid<T> {
+  weights: Record<string, number>
+  cost: (from: Location<T>, to: Location<T>) => number
+}
+
+export interface PriorityQueue<T> {
+  elements: [T, number][]
+  push: (item: T, priority: number) => void
+  pop: () => T | undefined
+  size: () => number
+}

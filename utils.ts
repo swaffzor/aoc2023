@@ -1,6 +1,14 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import { Grid, Point, SimpleGraph, SquareGrid } from './types'
+import {
+  Grid,
+  Location,
+  Point,
+  PriorityQueue,
+  SimpleGraph,
+  SquareGrid,
+  WeightedGraph,
+} from './types'
 
 export const getPuzzleInput = <T = string>(
   fileName: string,
@@ -260,3 +268,50 @@ export const breadthSearch = <T>(
   }
   return cameFrom
 }
+
+// export const dijkstra = (
+//   graph: WeightedGraph<number>,
+//   start: Location<number>,
+//   goal: Location<number>
+// ) => {
+//   const frontier: PriorityQueue<Location<number>> = {
+//     elements: [],
+//     push: (item, priority) => {
+//       frontier.elements.push([frontier.elements, [item, priority]])
+//       frontier.elements.sort((a, b) => a[1] - b[1])
+//     },
+//     pop: () => {
+//       return frontier.shift()?.item
+//     },
+//     size: () => frontier.length,
+//   }
+
+//   const cameFrom = {} as Record<string, Point<number>>
+//   cameFrom[start.col + ',' + start.row] = {} as Point<number> // just started, no previous point
+
+//   const costSoFar = {} as Record<string, number>
+//   costSoFar[start.col + ',' + start.row] = 0
+
+//   while (frontier.size > 0) {
+//     const current = frontier.values().next().value
+
+//     if (current?.col === goal.col && current?.row === goal.row) {
+//       break
+//     }
+
+//     const neighbors = getPointNeighbors(current, grid)
+//     // const test = neighbors.filter((n) => Number(n.value) < current.value)
+
+//     for (const next of neighbors) {
+//       const newCost =
+//         costSoFar[current.col + ',' + current.row] + Number(next.value)
+//       const nextIndex = next.col + ',' + next.row
+//       if (!(nextIndex in costSoFar)) {
+//         frontier.set(newCost, next)
+//         cameFrom[nextIndex] = current
+//       }
+//     }
+
+//     frontier.delete(current)
+//   }
+// }
