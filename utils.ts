@@ -244,7 +244,7 @@ export const makeSquareGrid = <T>(
     width,
     height,
     walls,
-    edges,
+    // edges,
     inBounds,
     neighbors,
   }
@@ -310,6 +310,7 @@ export const logGridValues = <T>(
 }
 
 // can be used for distance maps, procedural map generation, etc.
+// thanks to https://www.redblobgames.com/pathfinding/a-star/implementation.html#algorithm
 export const breadthSearch = <T>(
   grid: SimpleGraph<T>,
   start: string = '0,0',
