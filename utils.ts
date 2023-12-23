@@ -5,7 +5,7 @@ import {
   Location,
   Point,
   PriorityQueue,
-  SimpleGraph,
+  Graph,
   SquareGrid,
   WeightedGraph,
 } from './types'
@@ -133,6 +133,35 @@ export const extractDataToPointGrid = <T>(input: string) => {
   return grid
 }
 
+export const extractDataToGraph = <T>(
+  input: string,
+  wallChar?: string
+): SquareGrid<T> => {
+  const nodes: Record<string, Location<T>> = {}
+  const lines = input.split('\n')
+
+  let width = 0
+  for (let row = 0; row < lines.length; row++) {
+    for (let col = 0; col < lines[row].length; col++) {
+      const id = `${col},${row}`
+      nodes[id] = {
+        col,
+        row,
+        id,
+        value: lines[row][col] as T,
+      }
+    }
+    width = lines[row].length
+  }
+
+  return makeSquareGrid<T>(
+    width,
+    lines.length,
+    nodes,
+    wallChar ? getWalls<T>(Object.values(nodes), wallChar) : undefined
+  )
+}
+
 export const rotateCW = <T>(grid: T[][]) => {
   const rows = grid.length
   const newMatrix: T[][] = []
@@ -199,55 +228,100 @@ export const rotatePointsCW = (grid: Point<string>[][]) => {
 export const gridToString = <T>(grid: Point<T>[][]) =>
   grid.map((row) => row.map((point) => point.value).join('')).join('\n')
 
+export const getPointGridNodes = <T>(grid: Point<T>[][]) => {
+  const nodes: Record<string, Location<T>> = {}
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid.length; x++) {
+      if (grid[y][x].value !== undefined) {
+        nodes[`${x},${y}`] = {
+          col: x,
+          row: y,
+          id: `${x},${y}`,
+          value: grid[y][x].value as T,
+        }
+      }
+    }
+  }
+  return nodes
+}
+
+export const makeSquareGridFromPointGrid = <T>(
+  points: Point<T>[][],
+  wallChar?: string
+) => {
+  const nodes = getPointGridNodes<T>(points)
+  const walls =
+    wallChar !== undefined
+      ? getWalls<T>(Object.values(nodes), wallChar)
+      : new Set<string>()
+  const grid = makeSquareGrid<T>(points[0].length, points.length, nodes, walls)
+
+  return grid
+}
+
+export const getWalls = <T>(locations: Location<T>[], wallChar: string) => {
+  const walls = new Set<string>()
+  for (const location of locations) {
+    if (location.value === wallChar) {
+      walls.add(`${location.col},${location.row}`)
+    }
+  }
+  return walls
+}
+
+const getNeighbors = <T>(
+  point: string,
+  nodes: Record<string, Location<T>>,
+  inBounds: (point: Point<T>) => boolean,
+  isValid: (point: Point<T>) => boolean,
+  ignoreWalls?: boolean
+) => {
+  const tempNeighbors: Record<string, Location<T>> = {}
+  const [col, row] = point.split(',').map((n) => Number(n))
+  const cardinalNeighbors = [
+    { col: col - 1, row: row },
+    { col: col + 1, row: row },
+    { col: col, row: row - 1 },
+    { col: col, row: row + 1 },
+  ]
+  const results = cardinalNeighbors
+    .filter(inBounds)
+    .map((p) => nodes[`${p.col},${p.row}`])
+  const filtered = results.filter(isValid)
+  const neighbors = ignoreWalls ? results : filtered
+  neighbors.forEach((p) => {
+    const edgeId = `${p.col},${p.row}`
+    tempNeighbors[edgeId] = p
+  })
+  return tempNeighbors
+}
+
+const isInBounds = <T>(point: Point<T>, width: number, height: number) =>
+  point.col >= 0 && point.col < width && point.row >= 0 && point.row < height
+
+const isPointValid = <T>(point: Point<T>, walls: Set<string>) =>
+  !walls.has(`${point.col},${point.row}`)
+
 export const makeSquareGrid = <T>(
   width: number,
   height: number,
-  edgePoints: Record<string, Point<T>> = {},
+  nodes: Record<string, Location<T>> = {},
   walls: Set<string> = new Set()
 ): SquareGrid<T> => {
-  const inBounds = (point: Point<T>) =>
-    point.col >= 0 && point.col < width && point.row >= 0 && point.row < height
-  const isValid = (point: Point<T>) => !walls.has(`${point.col},${point.row}`)
-
-  const neighbors = (point: string, ignoreWalls?: boolean) => {
-    const tempEdges: Record<string, Point<T>> = {}
-    const [col, row] = point.split(',').map((n) => Number(n))
-    const cardinalNeighbors = [
-      { col: col - 1, row: row },
-      { col: col + 1, row: row },
-      { col: col, row: row - 1 },
-      { col: col, row: row + 1 },
-    ]
-    const results = cardinalNeighbors.filter(inBounds)
-    const filtered = results.filter(isValid)
-    const neighbors = ignoreWalls ? results : filtered
-    neighbors.forEach((p) => {
-      const edgeId = `${p.col},${p.row}`
-      tempEdges[edgeId] = p
-    })
-    return tempEdges
-  }
-
-  const edges = (cost?: number) => {
-    const tempEdges: Record<string, Point<T>> = { ...edgePoints }
-    for (let row = 0; row < height; row++) {
-      for (let col = 0; col < width; col++) {
-        const point = { col, row }
-        const edgeId = `${col},${row}`
-        tempEdges[edgeId] = point
-      }
-    }
-    return tempEdges
-  }
-
   return {
     width,
     height,
+    nodes,
     walls,
-    // edges,
-    inBounds,
-    isValid,
-    neighbors,
+    inBounds: (point) => isInBounds(point, width, height),
+    isValid: (point) => isPointValid(point, walls),
+    neighbors: (id, ignoreWalls) =>
+      getNeighbors(
+        id,
+        nodes,
+        (p) => isInBounds(p, width, height),
+        (p) => (ignoreWalls ? true : isPointValid(p, walls))
+      ),
   }
 }
 
@@ -313,7 +387,7 @@ export const logGridValues = <T>(
 // can be used for distance maps, procedural map generation, etc.
 // thanks to https://www.redblobgames.com/pathfinding/a-star/implementation.html#algorithm
 export const breadthSearch = <T>(
-  grid: SimpleGraph<T>,
+  grid: Graph<T>,
   start: string = '0,0',
   goal?: string,
   ignoreWalls = false
