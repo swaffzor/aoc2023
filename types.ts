@@ -4,9 +4,6 @@ export interface Point<T> {
   z?: number
   value?: T | string
 }
-// export type PointRow = Point[]
-// export type PointGrid = PointRow[]
-
 export type Row<T> = Point<T>[]
 export type PointGrid<T> = Row<T>[]
 
@@ -42,43 +39,26 @@ G: G→A
 Graph search algorithms don’t really “understand” the layout or properties of a grid. They only understand the connectivity.
 
 */
-export interface Graph<T> {
+export interface Grid<T> {
+  nodes: Location<T>[]
   neighbors: (id: string) => Point<T>[] // id is a string of the form "col,row"
 }
 
-// class SimpleGraph:
-//   def __init__(self):
-//     self.edges: dict[Location, list[Location]] = {}
-
-//   def neighbors(self, id: Location) -> list[Location]:
-//     return self.edges[id]
-// convert this Python to TypeScript
-// export class SimpleGraph<T> implements Graph<T> {
-//   edges: Record<string, Point<T>[]>
-//   constructor() {
-//     this.edges = {}
-//   }
-//   neighbors(id: string) {
-//     return this.edges[id]
-//   }
-// }
-
-export interface SimpleGraph<T> {
-  edges?: Record<string, Point<T>>
-  neighbors: (id: string, ignoreWalls?: boolean) => Record<string, Point<T>> // id is a string of the form "col,row"
+export interface Graph<T> {
+  nodes: Record<string, Location<T>>
+  edges?: (pointID: string) => Record<string, Location<T>>
+  neighbors: (id: string, ignoreWalls?: boolean) => Record<string, Location<T>> // id is a string of the form "col,row"
 }
 
-export interface SquareGrid<T> {
+export interface SquareGrid<T> extends Graph<T> {
   width: number
   height: number
   walls: Set<string>
   inBounds: (point: Point<T>) => boolean
-  neighbors: (point: string, ignoreWalls?: boolean) => Record<string, Point<T>> // point is a string of the form "col,row"
   isValid: (point: Point<T>) => boolean
-  // edges: (cost?: number) => Record<string, Point<T>>
 }
 
-export interface WeightedGraph<T> extends Graph<T> {
+export interface WeightedGraph<T> extends Grid<T> {
   cost: (from: Location<T>, to: Location<T>) => number
 }
 
