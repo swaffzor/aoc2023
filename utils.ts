@@ -384,6 +384,67 @@ export const logGridValues = <T>(
   return gridValues
 }
 
+export const drawGrid = (graph: SquareGrid<string>, style: Style) => {
+  // console.log('___'.repeat(graph.width))
+  const result: string[][] = []
+  for (let row = 0; row < graph.height; row++) {
+    const rowResult: string[] = []
+    for (let col = 0; col < graph.width; col++) {
+      const tile = drawTile(graph, `${col},${row}`, style)
+      // process.stdout.write(tile)
+      rowResult.push(tile)
+    }
+    process.stdout.write(rowResult.join(''))
+    process.stdout.write('\n')
+    result.push(rowResult)
+  }
+  process.stdout.write('___'.repeat(graph.width))
+  return result
+}
+
+export const drawTile = (
+  graph: SquareGrid<string>,
+  id: string,
+  style: Style
+): string => {
+  let r = '.'
+  if (style.number && style.number[id]) {
+    r = ` ${style.number[id]} `
+  }
+  if (style.point_to && style.point_to[id]) {
+    const [x1, y1] = id.split(',').map((n) => Number(n))
+    const [x2, y2] = style.point_to[id].split(',').map((n) => Number(n))
+    if (x2 === x1 + 1) r = '>'
+    if (x2 === x1 - 1) r = '<'
+    if (y2 === y1 + 1) r = 'v'
+    if (y2 === y1 - 1) r = '^'
+  }
+  if (style.path && style.path[id]) {
+    r = '@'
+  }
+  if (style.start && id === style.start) {
+    r = 'S'
+  }
+  if (style.goal && id === style.goal) {
+    r = 'Z'
+  }
+  if (graph.walls.has(id)) {
+    r = '#'
+  }
+  if (style.values && style.values[id]) {
+    r = style.values[id]
+  }
+  return r
+}
+interface Style {
+  number?: Record<string, number>
+  point_to?: Record<string, string>
+  path?: Record<string, boolean>
+  start?: string
+  goal?: string
+  values?: Record<string, string>
+}
+
 // can be used for distance maps, procedural map generation, etc.
 // thanks to https://www.redblobgames.com/pathfinding/a-star/implementation.html#algorithm
 export const breadthSearch = <T>(
@@ -465,3 +526,46 @@ export const breadthSearch = <T>(
 //     frontier.delete(current)
 //   }
 // }
+
+// var e0 = [0, 0];
+// var e1 = [0, 0];
+
+// function area(a) {
+//   var area = 0;
+//   var first = a[0];
+
+//   var l = a.length;
+//   for (var i=2; i<l; i++) {
+//     var p = a[i-1];
+//     var c = a[i];
+//     e0[0] = first[0] - c[0];
+//     e0[1] = first[1] - c[1];
+//     e1[0] = first[0] - p[0];
+//     e1[1] = first[1] - p[1];
+
+//     area += (e0[0] * e1[1]) - (e0[1] * e1[0]);
+//   }
+//   return area/2;
+// }
+
+// write a function that takes a list of points and returns the area of the polygon
+// the points are in order around the polygon
+// the points are in 2d space
+// the points are in the form [x, y]
+// the points can be in any unit (e.g. meters, miles, lightyears)
+// the area should be in the square of whatever units are used for x and y
+// the area should be positive
+export const polygonArea = <T>(locations: Point<T>[]) => {
+  const points = locations.map(({ col, row }) => [col, row])
+  const first = points[0]
+  const last = points[points.length - 1]
+  const area = points.reduce((acc, curr, index) => {
+    const next = points[index + 1]
+    if (next) {
+      return acc + (curr[0] * next[1] - curr[1] * next[0])
+    } else {
+      return acc + (curr[0] * first[1] - curr[1] * first[0])
+    }
+  }, 0)
+  return Math.abs(area / 2)
+}
