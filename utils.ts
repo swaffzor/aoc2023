@@ -207,8 +207,10 @@ export const makeSquareGrid = <T>(
 ): SquareGrid<T> => {
   const inBounds = (point: Point<T>) =>
     point.col >= 0 && point.col < width && point.row >= 0 && point.row < height
+  const isValid = (point: Point<T>) => !walls.has(`${point.col},${point.row}`)
 
-  const neighbors = (point: string) => {
+  const neighbors = (point: string, ignoreWalls?: boolean) => {
+    const tempEdges: Record<string, Point<T>> = {}
     const [col, row] = point.split(',').map((n) => Number(n))
     const cardinalNeighbors = [
       { col: col - 1, row: row },
@@ -217,14 +219,12 @@ export const makeSquareGrid = <T>(
       { col: col, row: row + 1 },
     ]
     const results = cardinalNeighbors.filter(inBounds)
-    const tempEdges: Record<string, Point<T>> = {}
-    results
-      .filter((p) => !walls.has(`${p.col},${p.row}`))
-      .forEach((p) => {
-        const edgeId = `${p.col},${p.row}`
-        tempEdges[edgeId] = p
-        return p as Point<T>
-      })
+    const filtered = results.filter(isValid)
+    const neighbors = ignoreWalls ? results : filtered
+    neighbors.forEach((p) => {
+      const edgeId = `${p.col},${p.row}`
+      tempEdges[edgeId] = p
+    })
     return tempEdges
   }
 
@@ -246,6 +246,7 @@ export const makeSquareGrid = <T>(
     walls,
     // edges,
     inBounds,
+    isValid,
     neighbors,
   }
 }
@@ -295,7 +296,7 @@ export const logGridValues = <T>(
           { col: parentCol, row: parentRow },
           { col, row }
         )
-        newRow.push(relativeDir)
+        newRow.push('#')
       } else {
         // get the value at this point
         // add the value to the row array
@@ -314,7 +315,8 @@ export const logGridValues = <T>(
 export const breadthSearch = <T>(
   grid: SimpleGraph<T>,
   start: string = '0,0',
-  goal?: string
+  goal?: string,
+  ignoreWalls = false
 ) => {
   const frontier = new Set<string>()
   frontier.add(start)
@@ -328,7 +330,7 @@ export const breadthSearch = <T>(
       break
     }
 
-    const neighbors = Object.values(grid.neighbors(current))
+    const neighbors = Object.values(grid.neighbors(current, ignoreWalls))
 
     for (const next of neighbors) {
       const id = `${next.col},${next.row}`

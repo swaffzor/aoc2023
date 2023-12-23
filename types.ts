@@ -65,7 +65,7 @@ export interface Graph<T> {
 
 export interface SimpleGraph<T> {
   edges?: Record<string, Point<T>>
-  neighbors: (id: string) => Record<string, Point<T>> // id is a string of the form "col,row"
+  neighbors: (id: string, ignoreWalls?: boolean) => Record<string, Point<T>> // id is a string of the form "col,row"
 }
 
 export interface SquareGrid<T> {
@@ -73,7 +73,8 @@ export interface SquareGrid<T> {
   height: number
   walls: Set<string>
   inBounds: (point: Point<T>) => boolean
-  neighbors: (point: string) => Record<string, Point<T>> // point is a string of the form "col,row"
+  neighbors: (point: string, ignoreWalls?: boolean) => Record<string, Point<T>> // point is a string of the form "col,row"
+  isValid: (point: Point<T>) => boolean
   // edges: (cost?: number) => Record<string, Point<T>>
 }
 
