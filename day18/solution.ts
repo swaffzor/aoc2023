@@ -50,9 +50,17 @@ Now, the lagoon can contain a much more respectable 62 cubic meters of lava. Whi
 The Elves are concerned the lagoon won't be large enough; if they follow their dig plan, how many cubic meters of lava could it hold?
 
 */
-import { breadthSearch, logGridValues, makeSquareGrid } from '../utils'
+import {
+  breadthSearch,
+  drawGrid,
+  extractDataToGraph,
+  logGridValues,
+  makeSquareGrid,
+  polygonArea,
+} from '../utils'
 import { SquareGrid } from '../types'
 
+// 92615 is too low
 // 8450 is too low
 export const part1 = (input: string) => {
   const data = input.split('\n').map((line) => {
@@ -76,14 +84,26 @@ export const part1 = (input: string) => {
       current = { x: current.x, y: i }
     }
   }
-  data.splice(0, 1)
+  // data.splice(0, 1)
 
+  let rowMax = 0
+  let rowMin = Infinity
+  let colMax = 0
+  let colMin = Infinity
   const bounds = data.reduce(
     (acc, { direction, distance }) => {
-      if (direction === 'R' || direction === 'L') {
+      if (direction === 'R') {
         acc.x += distance
-      } else if (direction === 'U' || direction === 'D') {
+        if (acc.x > colMax) colMax = acc.x
+      } else if (direction === 'L') {
+        acc.x -= distance
+        if (acc.x < colMin) colMin = acc.x
+      } else if (direction === 'D') {
         acc.y += distance
+        if (acc.y > rowMax) rowMax = acc.y
+      } else if (direction === 'U') {
+        acc.y -= distance
+        if (acc.y < rowMin) rowMin = acc.y
       }
 
       // add to the trench
@@ -112,12 +132,38 @@ export const part1 = (input: string) => {
   //8 .#....#
   //9 .######
 
-  const grid = makeSquareGrid<string>(
-    bounds.x + 1,
-    bounds.y + 1,
-    { '1,1': { row: 1, col: 1 } },
-    trench
+  const rowLength = Math.max(Math.abs(rowMin), Math.abs(rowMax))
+  const colLength = Math.max(Math.abs(colMin), Math.abs(colMax))
+  const allDots = Array.from({ length: rowLength + 1 }, () =>
+    Array.from({ length: colLength + 1 }, () => '.')
   )
+
+  // combine the trench and the dots
+  const temp: string[][] = allDots.map((row, y) =>
+    row.map((_, x) => (trench.has(`${x},${y}`) ? '#' : '.'))
+  )
+
+  const graph = extractDataToGraph<string>(
+    temp.map((r) => r.join('')).join('\n'),
+    '#'
+  )
+
+  const nodes = [Object.values(graph.nodes), Object.values(graph.walls)].flat()
+
+  let acc = { col: 0, row: 0 }
+  const dataNodes = data.map(({ direction, distance }) => {
+    const tempDistance = distance
+    const tempx = direction === 'R' ? 1 : direction === 'L' ? -1 : 0
+    acc.col = acc.col + tempx * tempDistance
+    const tempy = direction === 'D' ? 1 : direction === 'U' ? -1 : 0
+    acc.row = acc.row + tempy * tempDistance
+
+    // trench.add(`${current.x},${current.y}`)
+    return { col: acc.col, row: acc.row }
+  })
+  const area = polygonArea<string>([{ col: 0, row: 0 }, ...dataNodes])
+
+  // const grid = makeSquareGrid<string>(bounds.x + 1, bounds.y + 1, trench)
 
   // find the top left corner that is within the trench
   // let start = ''
@@ -161,78 +207,10 @@ export const part1 = (input: string) => {
   )
 
   const parents = breadthSearch<string>(
-    grid,
+    graph,
     `${startPoint.x - 1},${startPoint.y - 1}`,
     undefined
   )
-
-  // find the lowest col and row that is within the trench
-  const findPath = (start: string, goal: string) => {
-    let current = goal
-    const path = []
-    while (current !== start) {
-      path.push(current)
-      current = parents[current]
-    }
-    path.push(start)
-    return path.reverse()
-  }
-  // const path = findPath('1,0', '4,4')
-
-  interface Style {
-    number?: Record<string, number>
-    point_to?: Record<string, string>
-    path?: Record<string, boolean>
-    start?: string
-    goal?: string
-  }
-
-  const drawGrid = (graph: SquareGrid<string>, style: Style) => {
-    // console.log('___'.repeat(graph.width))
-    const result: string[][] = []
-    for (let row = 0; row < graph.height; row++) {
-      const rowResult: string[] = []
-      for (let col = 0; col < graph.width; col++) {
-        // process.stdout.write(drawTile(graph, `${col},${row}`, style))
-        rowResult.push(drawTile(graph, `${col},${row}`, style))
-      }
-      // process.stdout.write('\n')
-      result.push(rowResult)
-    }
-    // process.stdout.write('___'.repeat(graph.width))
-    return result
-  }
-  const drawTile = (
-    graph: SquareGrid<string>,
-    id: string,
-    style: Style
-  ): string => {
-    let r = ' . '
-    if (style.number && style.number[id]) {
-      r = ` ${style.number[id]} `
-    }
-    if (style.point_to && style.point_to[id]) {
-      const [x1, y1] = id.split(',').map((n) => Number(n))
-      const [x2, y2] = style.point_to[id].split(',').map((n) => Number(n))
-      if (x2 === x1 + 1) r = ' > '
-      if (x2 === x1 - 1) r = ' < '
-      if (y2 === y1 + 1) r = ' v '
-      if (y2 === y1 - 1) r = ' ^ '
-    }
-    if (style.path && style.path[id]) {
-      r = ' @ '
-    }
-    if (style.start && id === style.start) {
-      r = ' A '
-    }
-    if (style.goal && id === style.goal) {
-      r = ' Z '
-    }
-    if (graph.walls.has(id)) {
-      r = '###'
-    }
-    return r
-  }
 
   const style = {
     number: {},
@@ -242,18 +220,19 @@ export const part1 = (input: string) => {
     goal: `${startPoint.x - 1},${startPoint.y - 1}`,
   }
 
-  const drawnGrid = drawGrid(grid, style)
+  const drawnGrid = drawGrid(graph, style)
 
   const values = logGridValues(
-    grid,
+    graph,
     parents,
     `${startPoint.x - 1},${startPoint.y - 1}`
   )
-  // console.log(
-  //   values
-  //     .map((r) => r.map((v) => (v === undefined ? '?' : v)).join(''))
-  //     .join('\n')
-  // )
+  console.log(
+    values
+      .map((r) => r.map((v) => (v === undefined ? '?' : v)).join(''))
+      .join('\n')
+  )
   const lava = values.flat().filter((t) => t !== ' ').length
+
   return lava
 }
