@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import {
-  Grid,
+  PointGrid,
   Location,
   Point,
   PriorityQueue,
@@ -28,7 +28,7 @@ export const getPuzzleInput = <T = string>(
 
 export const getPointNeighbors = <T>(
   point: Point<T>,
-  grid: Grid<T>,
+  grid: PointGrid<T>,
   includeDiagonals = false
 ) => {
   const neighbors: Point<T>[] = []

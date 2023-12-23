@@ -88,7 +88,7 @@ Here are the distances for each tile on that loop:
 Find the single giant loop starting at S. How many steps along the loop does it take to get from the starting position to the point farthest from the starting position?
 */
 
-import { Grid, Point } from '../types'
+import { PointGrid, Point } from '../types'
 import * as fs from 'fs'
 // import * as path from 'path'
 
@@ -111,7 +111,7 @@ const extractDataToPointGrid = <T>(input: string) => {
 
 const getPointNeighbors = <T>(
   point: Point<T>,
-  grid: Grid<T>,
+  grid: PointGrid<T>,
   includeDiagonals = true
 ) => {
   const neighbors: Point<T>[] = []

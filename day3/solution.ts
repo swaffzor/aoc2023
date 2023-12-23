@@ -20,14 +20,14 @@ In this schematic, two numbers are not part numbers because they are not adjacen
 Of course, the actual engine schematic is much larger. What is the sum of all of the part numbers in the engine schematic?
 */
 
-import { Grid, Point } from '../types'
+import { PointGrid, Point } from '../types'
 import { getPointNeighbors } from '../utils'
 
-const grid: Grid<string> = []
+const grid: PointGrid<string> = []
 
 export const extractDataToPointGrid = (input: string) => {
   const rawGrid = input.split('\n').map((line) => line.split(''))
-  const pointGrid: Grid<string> = rawGrid.map((row, y) => {
+  const pointGrid: PointGrid<string> = rawGrid.map((row, y) => {
     return row.map((value, x) => {
       return {
         col: x,
