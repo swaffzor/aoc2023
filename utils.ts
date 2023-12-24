@@ -549,23 +549,24 @@ export const breadthSearch = <T>(
 // }
 
 // write a function that takes a list of points and returns the area of the polygon
-// the points are in order around the polygon
-// the points are in 2d space
-// the points are in the form [x, y]
-// the points can be in any unit (e.g. meters, miles, lightyears)
-// the area should be in the square of whatever units are used for x and y
-// the area should be positive
 export const polygonArea = <T>(locations: Point<T>[]) => {
-  const points = locations.map(({ col, row }) => [col, row])
-  const first = points[0]
-  const last = points[points.length - 1]
-  const area = points.reduce((acc, curr, index) => {
-    const next = points[index + 1]
-    if (next) {
-      return acc + (curr[0] * next[1] - curr[1] * next[0])
-    } else {
-      return acc + (curr[0] * first[1] - curr[1] * first[0])
+  let side1 = { row: 0, col: 0 }
+  let side2 = { row: 0, col: 0 }
+  const first = locations[0]
+  const length = locations.length
+  let area = 0
+  for (let i = 2; i < length; i++) {
+    const p = locations[i - 1]
+    const c = locations[i]
+    side1 = {
+      col: first.col - c.col,
+      row: first.row - c.row,
     }
-  }, 0)
+    side2 = {
+      col: first.col - p.col,
+      row: first.row - p.row,
+    }
+    area += side1.col * side2.row - side1.row * side2.col
+  }
   return Math.abs(area / 2)
 }
