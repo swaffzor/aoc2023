@@ -58,13 +58,13 @@ export interface SquareGrid<T> extends Graph<T> {
   isValid: (point: Point<T>) => boolean
 }
 
-export interface WeightedGraph<T> extends Grid<T> {
-  cost: (from: Location<T>, to: Location<T>) => number
+export interface WeightedGraph<T> extends Graph<T> {
+  cost: (from: Location<T>, to: Location<T>, cost: number) => number
 }
 
 export interface WeightedGrid<T> extends SquareGrid<T> {
   weights: Record<string, number>
-  cost: (from: Location<T>, to: Location<T>) => number
+  cost: (from: Location<T>, to: Location<T>, cost: number) => number
 }
 
 export interface PriorityQueue<T> {
@@ -73,3 +73,5 @@ export interface PriorityQueue<T> {
   pop: () => T | undefined
   size: () => number
 }
+
+export type Direction = '^' | '>' | 'v' | '<'

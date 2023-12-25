@@ -26,26 +26,27 @@ Because it is difficult to keep the top-heavy crucible going in a straight line 
 One way to minimize heat loss is this path:
 
 ___before____  ____after____
-2413432311323  2>>34^>>>1323
-3215453535623  32v>>>35v5623
-3255245654254  32552456v>>54
-3446585845452  3446585845v52
-4546657867536  4546657867v>6
-1438598798454  14385987984v4
-4457876987766  44578769877v6
-3637877979653  36378779796v>
-4654967986887  465496798688v
-4564679986453  456467998645v
-1224686865563  12246868655<v
-2546548887735  25465488877v5
-4322674655533  43226746555v>
+2413432311323  2>>34^>>>1323 0
+3215453535623  32v>>>35v5623 1
+3255245654254  32552456v>>54 2
+3446585845452  3446585845v52 3
+4546657867536  4546657867v>6 4
+1438598798454  14385987984v4 5
+4457876987766  44578769877v6 6
+3637877979653  36378779796v> 7
+4654967986887  465496798688v 8
+4564679986453  456467998645v 9
+1224686865563  12246868655<v A
+2546548887735  25465488877v5 B
+4322674655533  43226746555v> C
 
+0123456789ABC  0123456789ABC
 This path never moves more than three consecutive blocks in the same direction and incurs a heat loss of only 102.
 
 Directing the crucible from the lava pool to the machine parts factory, but not moving more than three consecutive blocks in the same direction, what is the least heat loss it can incur?
 */
 
-import { Point } from 'types'
+import { Point, Location, WeightedGrid, Graph } from 'types'
 import {
   breadthSearch,
   extractDataToPointGrid,
@@ -53,320 +54,265 @@ import {
   logGridValues,
   makeSquareGrid,
   determineDirection,
+  extractDataToGraph,
+  // dijkstra,
+  extractDataToWeightedGraph,
+  drawGrid,
 } from '../utils'
 
-interface HotPoint extends Point<number> {
-  closest: Point<number>
-}
-
 type Direction = '^' | '>' | 'v' | '<'
-interface Crucible {
-  col: number
-  row: number
-  dir: Direction
-  straightCount: number
-  heatLoss: number
-  lastPoint: Point<number>
+
+function cost<T>(
+  grid: WeightedGrid<T>,
+  toNode: {
+    id: string
+    cost: number
+    direction: Direction
+    straightCount: number
+  }
+): number {
+  // get the heat loss from toNode
+  const heatLoss = grid.weights[toNode.id]
+
+  return heatLoss
 }
 
-const emptyPoint = {
-  col: 0,
-  row: 0,
-  z: 0,
-  value: 0,
-  closest: { col: 0, row: 0 },
+const dijkstra = <T>(
+  graph: WeightedGrid<T>,
+  start: string,
+  goal: string,
+  getCost: (
+    from: Location<T>,
+    to: Location<T>,
+    cost: number,
+    mustTurn: boolean
+  ) => number
+): [Record<string, string>, Record<string, number>] => {
+  const frontier: [string, number, string][] = [[`${start}:>`, 0, '']]
+  const cameFrom = {} as Record<string, string>
+  const costSoFar = {} as Record<string, number>
+  // just started, no previous point
+  // frontier.push(start, 0)
+  cameFrom[`${start}:>`] = ''
+  costSoFar[`${start}:>`] = 0
+
+  while (frontier.length > 0) {
+    const [current, direction] = frontier.shift() as [string, number, string]
+    // const current = id.split(':')[0]
+
+    if (current === goal) {
+      break
+    }
+
+    const neighbors = Object.values(graph.neighbors(current.split(':')[0])) //.map((n) => n.id)
+    const fromLocation = graph.nodes[current.split(':')[0]]
+    for (let next of neighbors) {
+      const toLocation = neighbors.find((n) => n === next) as Location<T>
+      // determine if we need to turn, if going same direction for last 3 points, we need to turn
+      const p1 = cameFrom[current]?.split(',')
+      const p2 = cameFrom[cameFrom[current]]?.split(',')
+      const p3 = cameFrom[cameFrom[cameFrom[current]]]?.split(',')
+      // mustTurn is true if the last 3 points are going in the same direction, split the string on , and compare the first char of each
+      const v1 = p1 !== undefined && p1.length > 1
+      const v2 = p2 !== undefined && p2.length > 1
+      const v3 = p3 !== undefined && p3.length > 1
+      const mustTurnVert = v1 && v2 && v3 && p1[0] === p2[0] && p2[0] === p3[0]
+      const mustTurnHorz = v1 && v2 && v3 && p1[1] === p2[1] && p2[1] === p3[1]
+      let mustTurn = false
+      const currDirection = determineDirection(fromLocation, toLocation)
+      if (mustTurnHorz || mustTurnVert) {
+        const prevDirection = determineDirection(
+          { row: Number(p3[1]), col: Number(p3[0]) },
+          { row: Number(p2[1]), col: Number(p2[0]) }
+        )
+        mustTurn = currDirection === prevDirection
+      }
+
+      const newCost =
+        costSoFar[current] +
+        getCost(
+          fromLocation,
+          toLocation,
+          graph.weights[toLocation.id],
+          mustTurn
+        )
+
+      const key = `${next.id}:${currDirection}`
+      if (!(key in costSoFar) || newCost < costSoFar[key]) {
+        costSoFar[key] = newCost
+        frontier.push([key, newCost, currDirection])
+        cameFrom[key] = current
+      }
+    }
+
+    frontier.sort((a, b) => a[1] - b[1])
+    // frontier.delete(current)
+  }
+
+  return [cameFrom, costSoFar]
+}
+
+const calculateCost = <T>(
+  from: Location<T>,
+  to: Location<T>,
+  cost: number,
+  mustTurn: boolean
+): number => {
+  const STRAIGHT_PENALTY = 10000
+  return mustTurn ? cost + STRAIGHT_PENALTY : cost
+}
+
+type WeirdType = [
+  Record<string, { id: string; direction: Direction }>,
+  Record<string, { cost: number; direction: Direction }>
+]
+
+export const modifiedDijkstra = <T>(
+  graph: WeightedGrid<T>,
+  start: string,
+  goal: string
+): WeirdType => {
+  let frontier: Array<{
+    id: string
+    cost: number
+    direction: Direction
+    straightCount: number
+  }> = []
+  frontier.push({ id: start, cost: 0, direction: '>', straightCount: 0 }) // Start going right
+
+  let cameFrom: Record<string, { id: string; direction: Direction }> = {}
+  cameFrom[start] = { id: '', direction: '>' }
+
+  let costSoFar: Record<string, { cost: number; direction: Direction }> = {}
+  costSoFar[start] = { cost: 0, direction: '>' }
+
+  while (frontier.length > 0) {
+    frontier.sort((a, b) => a.cost - b.cost)
+    const current = frontier.shift()!
+
+    if (current?.id === goal) {
+      break
+    }
+
+    let neighbors = Object.values(graph.neighbors(current?.id || ''))
+
+    for (let next of neighbors) {
+      const [col, row] = current.id.split(',')
+      const newDirection = determineDirection(
+        { col: Number(col), row: Number(row) },
+        next
+      )
+      let newCost = costSoFar[current.id].cost + graph.weights[next.id]
+      const newStraightCount =
+        newDirection === current.direction ? current.straightCount + 1 : 0
+
+      if (
+        newStraightCount < 2 &&
+        (!costSoFar[next.id] || newCost < costSoFar[next.id].cost)
+      ) {
+        costSoFar = {
+          ...costSoFar,
+          [next.id]: { cost: newCost, direction: newDirection },
+        }
+        // costSoFar[next.id].cost = newCost
+        // costSoFar[next.id].direction = newDirection
+        cameFrom = {
+          ...cameFrom,
+          [next.id]: { id: current.id, direction: newDirection },
+        }
+        // cameFrom[next.id].id = currentID
+        // cameFrom[next.id].direction = newDirection
+        frontier.push({
+          id: next.id,
+          cost: newCost,
+          direction: newDirection,
+          straightCount: newStraightCount,
+        })
+      }
+    }
+  }
+  return [cameFrom, costSoFar]
 }
 
 export const part1 = (input: string) => {
-  const grid = extractDataToPointGrid<number>(input)
-  const mappedPoints = mapPoints(grid)
-  // map the mappedPoints back to a 2D array based off its point's row and col
-  const hotGrid = grid.map((row) =>
-    row.map((point) => {
-      const hotPoint =
-        mappedPoints.find(
-          (hotPoint) => hotPoint.row === point.row && hotPoint.col === point.col
-        ) || emptyPoint
-      return hotPoint
-    })
-  )
-
-  // ********************************************************************
-  const walls = new Set<string>()
-  walls.add('1,1')
-  walls.add('1,2')
-  walls.add('1,3')
-
-  const mygrid = makeSquareGrid<number>(10, 10, walls)
-  mygrid.walls.add('2,2')
-
-  const parents = breadthSearch<number>(mygrid, '0,0', '2,3')
-  const searchGraph = logGridValues(mygrid, parents, '0,0')
-  console.log(searchGraph.join('\n'))
-  // ********************************************************************
-
-  let pathGrid: Point<string>[][] = hotGrid.map((row) =>
-    row.map((point) => {
-      const pathPoint = {
-        ...point,
-        value: point.value?.toString(),
+  const grid = extractDataToWeightedGraph<number>(input, {})
+  let second: [string, Direction, number][][][] = []
+  for (let id in grid.nodes) {
+    const location = grid.nodes[id]
+    let third: [string, Direction, number][][] = []
+    for (let direction of ['^', '>', 'v', '<'] as Direction[]) {
+      let fourth: [string, Direction, number][] = []
+      for (let straightCount = 0; straightCount < 3; straightCount++) {
+        fourth.push([`${id}`, direction, straightCount])
       }
-      return pathPoint
-    })
+      third.push(fourth)
+    }
+    second.push(third)
+  }
+
+  const bottomRightElement = Object.values(grid.nodes).reduce(
+    (acc, location) => {
+      const point = grid.nodes[location.id]
+      if (point.row === grid.height - 1 && point.col === grid.width - 1) {
+        return point
+      }
+      return acc
+    }
   )
 
-  const start =
-    mappedPoints.find(
-      (point) => point.row === grid.length - 1 && point.col === grid.length - 1
-    ) || ({ ...emptyPoint } as HotPoint)
+  const [parents, costs] = modifiedDijkstra<number>(
+    grid,
+    '0,0',
+    bottomRightElement.id
+  )
 
-  const relativeDir = determineDirection(start, start.closest)
-  let crucible: Crucible = {
-    col: start.col,
-    row: start.col,
-    dir: relativeDir,
-    heatLoss: (Number(start?.value) || 0) * -1, // account for the first point not being counted
-    straightCount: 0,
-    lastPoint: {} as Point<number>,
-  }
+  const adjustedParents0 = Object.entries(parents).map(([k, v]) => {
+    return `${k}:${v.id}`
+  })
 
-  while (true) {
-    // find closest point
-    // can't go backwards, remove that as an option
-    pathGrid = logGrid(pathGrid, crucible)
+  const adjustedParents = adjustedParents0.reduce((acc, value) => {
+    const [k, v] = value.split(':')
+    acc[k] = v
+    return acc
+  }, {} as Record<string, string>)
 
-    const neighbors = getPointNeighbors({ ...crucible }, hotGrid)
+  const path = reconstructPath('0,0', bottomRightElement.id, adjustedParents)
+  const drawn = ''
+  drawGrid(grid, {
+    point_to: adjustedParents,
+    start: '0,0',
+    goal: bottomRightElement.id,
+  })
+  let last = ''
+  const pathRecord = path.reverse().reduce((acc, p) => {
+    acc[p] = last
+    last = p
+    return acc
+  }, {} as Record<string, string>)
 
-    const neighborsWithoutBackwards = neighbors.filter(
-      (n) =>
-        n.row !== crucible.lastPoint.row || n.col !== crucible.lastPoint.col
-    )
-    // if straightCount is 2, we need to turn, remove straight as an option
-    // make the current point the closest point based off of available options
-    const tempp = pointAtCrucible(crucible, mappedPoints).closest
-    let next: Point<number> = hotGrid[tempp.row][tempp.col]
-    if (crucible.straightCount === 2) {
-      const turnsOnly = neighborsWithoutBackwards.filter(
-        (n) => n.value !== crucible.dir
-      )
-      next = turnsOnly.reduce((acc, neighbor) => {
-        if ((neighbor?.value || -1) < (acc?.value || -1)) {
-          return neighbor
-        }
-        return acc
-      })
-      next = hotGrid[next.row][next.col]
-    } else if (JSON.stringify(crucible.lastPoint) === JSON.stringify(next)) {
-      next = neighborsWithoutBackwards.reduce((acc, neighbor) => {
-        if ((neighbor?.value || -1) < (acc?.value || -1)) {
-          return neighbor
-        }
-        return acc
-      })
-      next = hotGrid[next.row][next.col]
-    }
-
-    // crucible = makeTurn(
-    //   crucible,
-    //   determineDirection(crucible, next),
-    //   mappedPoints
-    // )
-    // crucible = {
-    //   dir: makeTurn(
-    //     crucible,
-    //     determineDirection(pointAtCrucible(crucible, mappedPoints), next)
-    //   ).dir,
-    //   row: next.row,
-    //   col: next.col,
-    //   straightCount:
-    //     crucible.straightCount === 2 ? 0 : crucible.straightCount + 1,
-    //   heatLoss: crucible.heatLoss + Number(next.value),
-    //   lastPoint: pointAtCrucible(crucible, mappedPoints),
-    // }
-  }
+  drawGrid(grid, {
+    start: '0,0',
+    goal: bottomRightElement.id,
+    point_to: pathRecord,
+    // number: grid.weights,
+  })
+  return path.length
 }
 
-const logGrid = (grid: Point<string>[][], crucible: Crucible) => {
-  console.clear()
-  const newGrid: Point<string>[][] = []
-  const stringValues = grid
-    .map((r) => {
-      const newRow: Point<string>[] = []
-      const tempRow = r
-        .map((p) => {
-          const temp =
-            p.row === crucible.row && p.col === crucible.col
-              ? crucible.dir
-              : p.value
-          newRow.push({ ...p, value: temp })
-          return temp
-        })
-        .join('')
-      newGrid.push(newRow)
-      return tempRow
-    })
-    .join('\n')
-    .concat('\n')
-  console.log(stringValues)
-  return newGrid
-}
+const reconstructPath = (
+  start: string,
+  goal: string,
+  cameFrom: Record<string, string>
+) => {
+  let current = goal
+  // A path is a sequence of edges, but often it’s easier to store the nodes
+  const path: string[] = []
 
-const pointAtCrucible = (crucible: Crucible, grid: HotPoint[]): HotPoint =>
-  grid.find((p) => p.row === crucible.row && p.col === crucible.col)! // || emptyPoint
-
-const backwardMap: Record<Direction, Direction> = {
-  '^': 'v',
-  '>': '<',
-  v: '^',
-  '<': '>',
-}
-
-const getNextDirPoint = (
-  next: Direction,
-  point: Point<number>
-): Point<number> => {
-  switch (next) {
-    case '^':
-      return { ...point, row: point.row - 1 }
-    case '>':
-      return { ...point, col: point.col + 1 }
-    case 'v':
-      return { ...point, row: point.row + 1 }
-    case '<':
-      return { ...point, col: point.col - 1 }
+  while (current !== start && current !== undefined) {
+    path.push(current)
+    current = cameFrom[current]
   }
+  path.push(start) // optional
+  path.reverse() // optional
+  return path
 }
-
-const makeTurn = (
-  crucible: Crucible,
-  turn: 'l' | 'r' | 's' | 'b',
-  mappedPoints: HotPoint[]
-): Crucible => {
-  // figure out 'where' left and right are based off of current direction
-  const cruciblePoint = pointAtCrucible(crucible, mappedPoints)
-  const gridSize =
-    mappedPoints.reduce((acc, point) => {
-      return point.row === 0 ? acc + 1 : acc
-    }, 0) - 1
-
-  let tempCrucible = {} as Crucible
-  switch (crucible.dir) {
-    case '^':
-      if (turn === 'l' && crucible.col > 0) {
-        tempCrucible = {
-          ...crucible,
-          col: crucible.col - 1,
-          row: crucible.row,
-          dir: '<',
-        }
-      } else if (turn === 'r' && crucible.col < gridSize) {
-        tempCrucible = {
-          ...crucible,
-          col: crucible.col + 1,
-          row: crucible.row,
-          dir: '>',
-        }
-      } else break
-      break
-    case '>':
-      if (turn === 'l' && crucible.row > 0) {
-        tempCrucible = {
-          ...crucible,
-          col: crucible.col,
-          row: crucible.row - 1,
-          dir: '^',
-        }
-      } else if (turn === 'r' && crucible.row < gridSize) {
-        tempCrucible = {
-          ...crucible,
-          col: crucible.col,
-          row: crucible.row + 1,
-          dir: 'v',
-        }
-      } else break
-      break
-    case 'v':
-      if (turn === 'l' && crucible.col < gridSize) {
-        tempCrucible = {
-          ...crucible,
-          col: crucible.col + 1,
-          row: crucible.row,
-          dir: '>',
-        }
-      } else if (turn === 'r' && crucible.col > 0) {
-        tempCrucible = {
-          ...crucible,
-          col: crucible.col - 1,
-          row: crucible.row,
-          dir: '<',
-        }
-      } else break
-      break
-    case '<':
-      if (turn === 'l' && crucible.row < gridSize) {
-        tempCrucible = {
-          ...crucible,
-          col: crucible.col,
-          row: crucible.row + 1,
-          dir: 'v',
-        }
-      } else if (turn === 'r' && crucible.row > 0) {
-        tempCrucible = {
-          ...crucible,
-          col: crucible.col,
-          row: crucible.row - 1,
-          dir: '^',
-        }
-      } else break
-      break
-    default:
-      break
-  }
-  return {
-    ...tempCrucible,
-    straightCount: turn === 's' ? crucible.straightCount + 1 : 0,
-    heatLoss: crucible.heatLoss + Number(cruciblePoint?.value),
-    lastPoint: cruciblePoint,
-  }
-}
-
-const mapPoints = (grid: Point<number>[][]) => {
-  const mappedPoints: HotPoint[] = []
-
-  for (let row = grid.length - 1; row >= 0; row--) {
-    for (let col = grid[row].length - 1; col >= 0; col--) {
-      const point = grid[row][col]
-      const neighbors = getPointNeighbors(point, grid)
-      const closestNeighbor = neighbors.reduce((acc, neighbor) => {
-        if ((neighbor?.value || -1) < (acc?.value || -1)) {
-          return neighbor
-        }
-        return acc
-      })
-      mappedPoints.push({
-        ...point,
-        closest: closestNeighbor,
-      })
-    }
-  }
-
-  return mappedPoints
-}
-
-// const reconstructPath = (
-//   start: Point<number>,
-//   goal: Point<number>,
-//   cameFrom: Record<string, Point<number>>
-// ) => {
-//   let current = goal
-//   // A path is a sequence of edges, but often it’s easier to store the nodes
-//   const path: string[] = []
-
-//   while (JSON.stringify(current) !== JSON.stringify(start)) {
-//     const index = current?.col + ',' + current?.row
-//     path.push(index)
-//     current = cameFrom[index]
-//   }
-//   path.push(start.col + ',' + start.row) // optional
-//   path.reverse() // optional
-// }

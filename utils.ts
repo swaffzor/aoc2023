@@ -8,6 +8,8 @@ import {
   Graph,
   SquareGrid,
   WeightedGraph,
+  WeightedGrid,
+  Direction,
 } from './types'
 
 export const getPuzzleInput = <T = string>(
@@ -160,6 +162,42 @@ export const extractDataToGraph = <T>(
     nodes,
     wallChar ? getWalls<T>(Object.values(nodes), wallChar) : undefined
   )
+}
+
+export const extractDataToWeightedGraph = <T>(
+  input: string,
+  weights: Record<string, number> = {},
+  getCost?: (from: Location<T>, to: Location<T>, cost: number) => number,
+  wallChar?: string
+): WeightedGrid<T> => {
+  const graph = extractDataToGraph<T>(input, wallChar)
+  const costs: Record<string, number> =
+    weights.length > 0
+      ? weights
+      : Object.values(graph.nodes).reduce((acc, node) => {
+          acc[node.id] = Number(node.value)
+          return acc
+        }, {} as Record<string, number>)
+
+  const cost = (from: Location<T>, to: Location<T>, price: number) => {
+    const weightValues = Object.entries(costs)
+    const fromValue = weightValues.find(
+      ([id]) => id === from?.id
+    ) as unknown as Record<string, number>
+    const toValue = weightValues.find(
+      ([id]) => id === to?.id
+    ) as unknown as Record<string, number>
+    if (fromValue && toValue) {
+      return Math.abs(fromValue[1] - toValue[1])
+    }
+    return 0
+  }
+
+  return {
+    ...graph,
+    weights: costs,
+    cost: getCost ? getCost : cost,
+  }
 }
 
 export const rotateCW = <T>(grid: T[][]) => {
@@ -326,8 +364,8 @@ export const makeSquareGrid = <T>(
 }
 
 export const determineDirection = (
-  point: Point<number>,
-  nextPoint: Point<number>
+  point: { col: number; row: number },
+  nextPoint: { col: number; row: number }
 ) => {
   if (nextPoint.col > point.col && nextPoint.row === point.row) {
     return '>'
@@ -338,7 +376,27 @@ export const determineDirection = (
   if (nextPoint.row > point.row && nextPoint.col === point.col) {
     return 'v'
   }
-  return '^'
+  if (nextPoint.row < point.row && nextPoint.col === point.col) {
+    return '^'
+  }
+  return '' as Direction
+}
+
+export const stringToPoint = (id: string): { col: number; row: number } => {
+  const [col, row] = id.split(',')
+  return { col: Number(col), row: Number(row) }
+}
+
+// find the direction that got us into the current cell from the cameFrom node
+const findDirectionFromCameFrom = (
+  from: Record<Direction, string>,
+  to: string
+): Direction | undefined => {
+  for (const direction in from) {
+    if (from[direction as Direction] === to) {
+      return direction as Direction
+    }
+  }
 }
 
 // a function to log each value in the grid to the console in a grid format
@@ -384,12 +442,13 @@ export const logGridValues = <T>(
   return gridValues
 }
 
-export const drawGrid = (graph: SquareGrid<string>, style: Style) => {
+export const drawGrid = <T>(graph: SquareGrid<T>, style: Style) => {
   // console.log('___'.repeat(graph.width))
   const result: string[][] = []
   for (let row = 0; row < graph.height; row++) {
     const rowResult: string[] = []
     for (let col = 0; col < graph.width; col++) {
+      // const dir = col === 0 ? ':<' : ''
       const tile = drawTile(graph, `${col},${row}`, style)
       // process.stdout.write(tile)
       rowResult.push(tile)
@@ -398,28 +457,35 @@ export const drawGrid = (graph: SquareGrid<string>, style: Style) => {
     process.stdout.write('\n')
     result.push(rowResult)
   }
-  process.stdout.write('___'.repeat(graph.width))
+  process.stdout.write('____'.repeat(graph.width))
+  process.stdout.write('\n')
   return result
 }
 
-export const drawTile = (
-  graph: SquareGrid<string>,
+export const drawTile = <T>(
+  graph: SquareGrid<T>,
   id: string,
   style: Style
 ): string => {
   let r = '.'
   if (style.number && style.number[id]) {
-    r = ` ${style.number[id]} `
+    const val = `${style.number[id]}`
+    r =
+      style.number[id] === Infinity
+        ? '∞'
+        : val.length === 1
+        ? `${val}`
+        : val.length === 2
+        ? ` ${val}`
+        : val.length === 3
+        ? `${val}`
+        : val
   }
   if (style.point_to && style.point_to[id]) {
-    const [x1, y1] = id.split(',').map((n) => Number(n))
-    const [x2, y2] = style.point_to[id].split(',').map((n) => Number(n))
-    if (x2 === x1 + 1) r = '>'
-    if (x2 === x1 - 1) r = '<'
-    if (y2 === y1 + 1) r = 'v'
-    if (y2 === y1 - 1) r = '^'
+    r = determineDirection(stringToPoint(id), stringToPoint(style.point_to[id]))
   }
-  if (style.path && style.path[id]) {
+
+  if (style.path && style.path.includes(id)) {
     r = '@'
   }
   if (style.start && id === style.start) {
@@ -439,7 +505,7 @@ export const drawTile = (
 interface Style {
   number?: Record<string, number>
   point_to?: Record<string, string>
-  path?: Record<string, boolean>
+  path?: string[]
   start?: string
   goal?: string
   values?: Record<string, string>
@@ -478,6 +544,46 @@ export const breadthSearch = <T>(
     frontier.delete(current)
   }
   return cameFrom
+}
+
+export const dijkstra = <T>(
+  graph: WeightedGrid<T>,
+  start: string = '0,0',
+  goal?: string
+): [Record<string, string>, Record<string, number>] => {
+  const frontier = new Set<string>()
+  const cameFrom = {} as Record<string, string>
+  const costSoFar = {} as Record<string, number>
+  // just started, no previous point
+  frontier.add(start)
+  cameFrom[start] = ''
+  costSoFar[start] = 0
+
+  while (frontier.size > 0) {
+    const current = frontier.values().next().value as string
+
+    if (current === goal) {
+      break
+    }
+
+    const neighbors = Object.values(graph.neighbors(current)) //.map((n) => n.id)
+    const fromLocation = graph.nodes[current]
+    for (let next of neighbors) {
+      const toLocation = neighbors.find((n) => n === next) as Location<T>
+      const newCost =
+        costSoFar[current] +
+        graph.cost(fromLocation, toLocation, graph.weights[toLocation.id])
+      if (!(next.id in costSoFar) || newCost < costSoFar[next.id]) {
+        costSoFar[next.id] = newCost
+        frontier.add(next.id)
+        cameFrom[next.id] = current
+      }
+    }
+
+    frontier.delete(current)
+  }
+
+  return [cameFrom, costSoFar]
 }
 
 // export const dijkstra = (
