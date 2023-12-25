@@ -44,6 +44,11 @@ export interface Grid<T> {
   neighbors: (id: string) => Point<T>[] // id is a string of the form "col,row"
 }
 
+export interface GraphS {
+  nodes: Record<string, string>
+  edges?: Record<string, string[]>
+  neighbors: (id: string, ignoreWalls?: boolean) => Record<string, string> // id is a string of the form "col,row"
+}
 export interface Graph<T> {
   nodes: Record<string, Location<T>>
   edges?: (pointID: string) => Record<string, Location<T>>
