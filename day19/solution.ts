@@ -112,3 +112,97 @@ export const part1 = (input: string) => {
 
   return ratings.reduce((a, b) => a + b)
 }
+
+/*
+--- Part Two ---
+Even with your help, the sorting process still isn't fast enough.
+
+One of the Elves comes up with a new plan: rather than sort parts individually through all of these workflows, maybe you can figure out in advance which combinations of ratings will be accepted or rejected.
+
+Each of the four ratings (x, m, a, s) can have an integer value ranging from a minimum of 1 to a maximum of 4000. Of all possible distinct combinations of ratings, your job is to figure out which ones will be accepted.
+
+In the above example, there are 167409079868000 distinct combinations of ratings that will be accepted.
+
+Consider only your list of workflows; the list of part ratings that the Elves wanted you to sort is no longer relevant. How many distinct combinations of ratings will be accepted by the Elves' workflows?
+*/
+
+export const part2 = (input: string) => {
+  const data = input.split('\n\n')
+  const pruneList: string[] = []
+  const shortcutList: string[] = []
+  const workflows = data[0].split('\n').map((workflow) => {
+    const [name, rules] = workflow.split('{')
+    const destinations = rules
+      .slice(0, -1)
+      .split(',')
+      .map((rule) => {
+        const [, destination] = rule.split(':')
+        return destination || rule
+      })
+    if (destinations.every((d) => d === 'A')) {
+      // mark this workflow as always accepting
+      // this will be used to optimize the search
+      // rename name to be 'A'
+      // update all other workflows that point to this workflow
+      // to point to 'A' instead
+      shortcutList.push(name)
+      return {
+        name: 'A',
+        destinations: [],
+      }
+    }
+    if (destinations.every((d) => d === 'R')) {
+      // mark this workflow as always rejecting
+      // this will be used to optimize the search
+      // rename name to be 'R'
+      // update all other workflows that point to this workflow
+      // to point to 'R' instead
+      pruneList.push(name)
+      return {
+        name: 'R',
+        destinations: [],
+      }
+    }
+    return {
+      name,
+      destinations,
+    }
+  })
+  // .filter((workflow) => workflow.name !== 'A' && workflow.name !== 'R')
+
+  const temp = workflows.map((workflow) => {
+    if (pruneList.some(workflow.destinations.some((d) => d === 'R'))) {
+      return {
+        name: 'R',
+        destinations: [],
+      }
+    } else if (shortcutList.includes(workflow.name)) {
+      return {
+        name: 'A',
+        destinations: [],
+      }
+    } else {
+      return workflow
+    }
+  })
+
+  console.log(workflows)
+}
+
+/* 
+px{a<2006:qkq,m>2090:A,rfg}
+pv{a>1716:R,A}
+lnx{m>1548:A,A}
+rfg{s<537:gd,x>2440:R,A}
+qs{s>3448:A,lnx}
+qkq{x<1416:A,crn}
+crn{x>2662:A,R}
+in{s<1351:px,qqz}
+qqz{s>2770:qs,m<1801:hdj,R}
+gd{a>3333:R,R}
+hdj{m>838:A,pv}
+
+in  -> px  -> qkq -> A;  in -> qqz
+s<1351 a<2006 x<1416
+
+*/
