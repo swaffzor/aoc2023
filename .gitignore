@@ -49,3 +49,6 @@ yarn.lock
 
 # Ignore .env.production.local file
 .env.production.local
+
+**/input.txt
+**/sampleInput.txt
